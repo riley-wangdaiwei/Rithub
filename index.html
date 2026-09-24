@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <title>Projects</title>
+  <title>Rithub</title>
 
   <link rel="stylesheet" href="style.css" />
 </head>
@@ -12,17 +12,34 @@
 <body>
 
   <header class="topbar">
-    <div class="logo">PROJECTS</div>
 
-    <button id="addProjectBtn" class="ghost-button">
-      + Project
-    </button>
+    <div class="brand-left">
+      PROJECTS
+    </div>
+
+    <div class="brand-right">
+
+      <button
+        id="addProjectBtn"
+        class="plus-button"
+        aria-label="New project"
+      >
+        +
+      </button>
+
+      <div class="brand-name">
+        Rithub
+      </div>
+
+    </div>
+
   </header>
 
 
   <main class="container">
 
     <!-- HOME -->
+
     <section id="homeView">
 
       <div id="projectsGrid" class="projects-grid"></div>
@@ -30,41 +47,62 @@
     </section>
 
 
-    <!-- PROJECT PAGE -->
+    <!-- PROJECT -->
+
     <section id="projectView" class="hidden">
 
-      <button id="backBtn" class="back-button">
-        ← Projects
-      </button>
+      <div class="project-nav">
 
-      <div class="project-header">
-        <div>
-          <div id="projectCity" class="project-city"></div>
-          <h1 id="projectTitle"></h1>
-        </div>
-
-        <button id="commitBtn" class="commit-button">
-          + Commit
+        <button
+          id="backBtn"
+          class="text-button"
+        >
+          ← Projects
         </button>
+
+        <button
+          id="cancelProjectBtn"
+          class="cancel-button"
+        >
+          Cancel Project
+        </button>
+
       </div>
 
 
-      <div class="project-section">
+      <div class="project-header">
+
+        <h1 id="projectTitle"></h1>
+
+        <button
+          id="commitBtn"
+          class="commit-button"
+        >
+          + Commit
+        </button>
+
+      </div>
+
+
+      <section class="project-section">
 
         <div class="section-label">
-          NEXT
+          NEXT COMMITS
         </div>
 
         <div id="nextSteps"></div>
 
-        <button id="addStepBtn" class="small-button">
+        <button
+          id="addStepBtn"
+          class="text-button"
+        >
           + Next step
         </button>
 
-      </div>
+      </section>
 
 
-      <div class="project-section">
+      <section class="project-section">
 
         <div class="section-label">
           HISTORY
@@ -72,14 +110,15 @@
 
         <div id="commitHistory"></div>
 
-      </div>
+      </section>
 
     </section>
 
   </main>
 
 
-  <!-- PROJECT MODAL -->
+  <!-- NEW PROJECT -->
+
   <div id="projectModal" class="modal hidden">
 
     <div class="modal-card">
@@ -91,20 +130,22 @@
       <input
         id="projectNameInput"
         placeholder="Project name"
-      />
-
-      <input
-        id="projectCityInput"
-        placeholder="Place — e.g. Dakar"
+        autocomplete="off"
       />
 
       <div class="modal-actions">
 
-        <button id="cancelProjectBtn" class="ghost-button">
+        <button
+          id="cancelProjectModalBtn"
+          class="text-button"
+        >
           Cancel
         </button>
 
-        <button id="saveProjectBtn" class="commit-button">
+        <button
+          id="saveProjectBtn"
+          class="commit-button"
+        >
           Create
         </button>
 
@@ -115,7 +156,8 @@
   </div>
 
 
-  <!-- COMMIT MODAL -->
+  <!-- NEW COMMIT -->
+
   <div id="commitModal" class="modal hidden">
 
     <div class="modal-card">
@@ -129,23 +171,34 @@
         placeholder="What did you do?"
       ></textarea>
 
-      <div class="section-label modal-next-title">
-        NEXT
+
+      <div class="section-label">
+        NEXT COMMITS
       </div>
 
       <div id="commitNextSteps"></div>
 
-      <button id="addCommitStepBtn" class="small-button">
+      <button
+        id="addCommitStepBtn"
+        class="text-button"
+      >
         + Next step
       </button>
 
+
       <div class="modal-actions">
 
-        <button id="cancelCommitBtn" class="ghost-button">
+        <button
+          id="cancelCommitBtn"
+          class="text-button"
+        >
           Cancel
         </button>
 
-        <button id="saveCommitBtn" class="commit-button">
+        <button
+          id="saveCommitBtn"
+          class="commit-button"
+        >
           Commit
         </button>
 
@@ -154,6 +207,11 @@
     </div>
 
   </div>
+
+
+  <footer class="footer-mark">
+    ALL WORK / NO PLAY
+  </footer>
 
 
   <script src="app.js"></script>

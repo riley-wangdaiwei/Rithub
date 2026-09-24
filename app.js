@@ -1,126 +1,232 @@
-/* =====================================================
-   PROJECTS MVP
+const STORAGE_KEY = "rithub-projects";
 
-   Everything is stored in localStorage.
-   No backend.
-   No database.
+
+/* =====================================================
+   RANDOM CITY CODE
 ===================================================== */
 
+const CITIES = [
 
-const STORAGE_KEY = "projects-mvp";
-
-
-/* --------------------
-   DATA
--------------------- */
-
-let projects = JSON.parse(
-  localStorage.getItem(STORAGE_KEY)
-) || [
-
-  {
-    id: crypto.randomUUID(),
-
-    name: "GAMBIA",
-
-    city: "Dakar",
-
-    focus: true,
-
-    nextSteps: [
-      {
-        id: crypto.randomUUID(),
-        text: "Finish payment flow",
-        done: false
-      },
-      {
-        id: crypto.randomUUID(),
-        text: "Compare settlement options",
-        done: false
-      },
-      {
-        id: crypto.randomUUID(),
-        text: "Talk to GG",
-        done: false
-      }
-    ],
-
-    commits: [
-
-      {
-        id: crypto.randomUUID(),
-
-        text: "Payment flow v1",
-
-        createdAt: new Date().toISOString()
-      }
-
-    ]
-  },
-
-  {
-    id: crypto.randomUUID(),
-
-    name: "STARTUP",
-
-    city: "New York",
-
-    focus: false,
-
-    nextSteps: [
-      {
-        id: crypto.randomUUID(),
-        text: "Build first interaction",
-        done: false
-      }
-    ],
-
-    commits: []
-  },
-
-  {
-    id: crypto.randomUUID(),
-
-    name: "PRIVACY",
-
-    city: "Taipei",
-
-    focus: false,
-
-    nextSteps: [
-      {
-        id: crypto.randomUUID(),
-        text: "Read next paper",
-        done: false
-      }
-    ],
-
-    commits: []
-  }
+  "dakar",
+  "tokyo",
+  "paris",
+  "lagos",
+  "oslo",
+  "lima",
+  "kyoto",
+  "accra",
+  "seoul",
+  "nairobi",
+  "tbilisi",
+  "delhi",
+  "berlin",
+  "lisbon",
+  "cairo",
+  "taipei",
+  "marrakesh",
+  "athens",
+  "helsinki",
+  "mexico-city",
+  "jakarta",
+  "vilnius",
+  "tunis",
+  "reykjavik",
+  "vienna",
+  "istanbul",
+  "montreal",
+  "havana",
+  "melbourne",
+  "buenos-aires"
 
 ];
+
+
+function generateCommitCode() {
+
+  const first =
+    CITIES[
+      Math.floor(
+        Math.random() * CITIES.length
+      )
+    ];
+
+
+  let second;
+
+  do {
+
+    second =
+      CITIES[
+        Math.floor(
+          Math.random() * CITIES.length
+        )
+      ];
+
+  } while (second === first);
+
+
+  return `${first}-${second}`;
+
+}
+
+
+/* =====================================================
+   DATA
+===================================================== */
+
+let projects =
+  JSON.parse(
+    localStorage.getItem(STORAGE_KEY)
+  ) || [
+
+    {
+      id: crypto.randomUUID(),
+
+      name: "GAMBIA",
+
+      focus: true,
+
+      cancelled: false,
+
+      nextSteps: [
+
+        {
+          id: crypto.randomUUID(),
+          text: "Finish payment flow"
+        },
+
+        {
+          id: crypto.randomUUID(),
+          text: "Compare settlement options"
+        },
+
+        {
+          id: crypto.randomUUID(),
+          text: "Talk to GG"
+        }
+
+      ],
+
+      commits: [
+
+        {
+          id: crypto.randomUUID(),
+
+          text: "Payment flow v1",
+
+          code: generateCommitCode(),
+
+          createdAt:
+            new Date().toISOString()
+
+        }
+
+      ]
+
+    },
+
+
+    {
+      id: crypto.randomUUID(),
+
+      name: "STARTUP",
+
+      focus: false,
+
+      cancelled: false,
+
+      nextSteps: [
+
+        {
+          id: crypto.randomUUID(),
+          text: "Build first interaction"
+        }
+
+      ],
+
+      commits: []
+
+    },
+
+
+    {
+      id: crypto.randomUUID(),
+
+      name: "PRIVACY",
+
+      focus: false,
+
+      cancelled: false,
+
+      nextSteps: [
+
+        {
+          id: crypto.randomUUID(),
+          text: "Read next paper"
+        }
+
+      ],
+
+      commits: []
+
+    }
+
+  ];
 
 
 let currentProjectId = null;
 
 
-/* --------------------
+/* =====================================================
+   MIGRATION
+===================================================== */
+
+projects.forEach(project => {
+
+  if (project.cancelled === undefined) {
+
+    project.cancelled = false;
+
+  }
+
+
+  project.commits.forEach(commit => {
+
+    if (!commit.code) {
+
+      commit.code =
+        generateCommitCode();
+
+    }
+
+  });
+
+});
+
+
+saveData();
+
+
+/* =====================================================
    SAVE
--------------------- */
+===================================================== */
 
 function saveData() {
 
   localStorage.setItem(
+
     STORAGE_KEY,
+
     JSON.stringify(projects)
+
   );
 
 }
 
 
-/* --------------------
+/* =====================================================
    HELPERS
--------------------- */
+===================================================== */
 
 function getProject(id) {
 
@@ -131,10 +237,21 @@ function getProject(id) {
 }
 
 
+function getActiveProjects() {
+
+  return projects.filter(
+    project => !project.cancelled
+  );
+
+}
+
+
 function getLatestCommit(project) {
 
   if (!project.commits.length) {
+
     return null;
+
   }
 
   return project.commits[
@@ -146,28 +263,49 @@ function getLatestCommit(project) {
 
 function formatDate(dateString) {
 
-  const date = new Date(dateString);
+  const date =
+    new Date(dateString);
 
-  const now = new Date();
+  const now =
+    new Date();
 
   const diff =
     (now - date) / 1000;
 
+
   if (diff < 60) {
+
     return "just now";
+
   }
+
 
   if (diff < 3600) {
-    return `${Math.floor(diff / 60)}m ago`;
+
+    return `${Math.floor(
+      diff / 60
+    )}m ago`;
+
   }
+
 
   if (diff < 86400) {
-    return `${Math.floor(diff / 3600)}h ago`;
+
+    return `${Math.floor(
+      diff / 3600
+    )}h ago`;
+
   }
 
+
   if (diff < 604800) {
-    return `${Math.floor(diff / 86400)}d ago`;
+
+    return `${Math.floor(
+      diff / 86400
+    )}d ago`;
+
   }
+
 
   return date.toLocaleDateString(
     undefined,
@@ -180,15 +318,33 @@ function formatDate(dateString) {
 }
 
 
-/* --------------------
+function escapeHtml(value) {
+
+  return String(value)
+
+    .replaceAll("&", "&amp;")
+
+    .replaceAll("<", "&lt;")
+
+    .replaceAll(">", "&gt;")
+
+    .replaceAll('"', "&quot;")
+
+    .replaceAll("'", "&#039;");
+
+}
+
+
+/* =====================================================
    HOME
--------------------- */
+===================================================== */
 
 function renderHome() {
 
   document
     .getElementById("homeView")
     .classList.remove("hidden");
+
 
   document
     .getElementById("projectView")
@@ -200,123 +356,159 @@ function renderHome() {
       "projectsGrid"
     );
 
+
   grid.innerHTML = "";
 
 
-  projects.forEach(project => {
-
-    const latest =
-      getLatestCommit(project);
-
-    const next =
-      project.nextSteps.length
-        ? project.nextSteps[0].text
-        : "Nothing queued";
+  const activeProjects =
+    getActiveProjects();
 
 
-    const card =
-      document.createElement("div");
+  activeProjects.forEach(
+    project => {
 
-    card.className =
-      "project-card" +
-      (project.focus ? " focus" : "");
+      const latest =
+        getLatestCommit(project);
 
 
-    card.innerHTML = `
+      const next =
+        project.nextSteps.length
+          ? project.nextSteps[0].text
+          : "Nothing queued";
 
-      <div>
 
-        <div class="project-top">
+      const card =
+        document.createElement("article");
 
-          <div>
 
-            <div class="project-name">
-              ${escapeHtml(project.name)}
-            </div>
+      card.className =
+        "project-card" +
+        (
+          project.focus
+            ? " focus"
+            : ""
+        );
 
-            <div class="project-place">
-              ${escapeHtml(project.city)}
-            </div>
 
-          </div>
+      card.innerHTML = `
+
+        <div>
 
           ${
             project.focus
-              ? `<div class="focus-label">FOCUS</div>`
+              ? `
+                <div class="focus-label">
+                  FOCUS
+                </div>
+              `
               : ""
           }
 
-        </div>
 
+          <div class="project-name">
 
-        <div class="project-info">
-
-          <div class="info-block">
-
-            <div class="info-label">
-              NEXT
-            </div>
-
-            <div class="info-text">
-              ${escapeHtml(next)}
-            </div>
+            ${escapeHtml(project.name)}
 
           </div>
 
 
-          <div class="info-block">
+          <div class="commit-info">
 
-            <div class="info-label">
-              LATEST
+
+            <div class="info-block">
+
+              <div class="info-label">
+                NEXT COMMIT
+              </div>
+
+              <div class="info-text">
+
+                ${escapeHtml(next)}
+
+              </div>
+
             </div>
 
-            <div class="info-text latest">
+
+            <div class="info-block">
+
+              <div class="info-label">
+                LATEST COMMIT
+              </div>
 
               ${
                 latest
-                  ? escapeHtml(latest.text)
-                  : "No commits yet"
+                  ? `
+                    <div class="info-text">
+
+                      ${escapeHtml(
+                        latest.text
+                      )}
+
+                    </div>
+
+                    <div class="card-bottom">
+
+                      ${escapeHtml(
+                        latest.code
+                      )}
+
+                      ·
+
+                      ${formatDate(
+                        latest.createdAt
+                      )}
+
+                    </div>
+                  `
+                  : `
+                    <div class="info-text commit-placeholder">
+                      No commits yet
+                    </div>
+                  `
               }
 
             </div>
 
+
           </div>
 
         </div>
 
-      </div>
+
+        <div>
+
+          <button
+            class="text-button open-project"
+            data-id="${project.id}"
+          >
+            Open →
+          </button>
 
 
-      <div style="margin-top:30px;">
+          ${
+            project.focus
+              ? ""
+              : `
+                <button
+                  class="text-button focus-project"
+                  data-id="${project.id}"
+                  style="margin-left:18px;"
+                >
+                  Set focus
+                </button>
+              `
+          }
 
-        <button
-          class="small-button open-project"
-          data-id="${project.id}"
-        >
-          Open →
-        </button>
+        </div>
 
-        ${
-          project.focus
-            ? ""
-            : `
-              <button
-                class="small-button focus-project"
-                data-id="${project.id}"
-              >
-                Set focus
-              </button>
-            `
-        }
-
-      </div>
-
-    `;
+      `;
 
 
-    grid.appendChild(card);
+      grid.appendChild(card);
 
-  });
+    }
+  );
 
 
   attachHomeEvents();
@@ -324,11 +516,12 @@ function renderHome() {
 }
 
 
-/* --------------------
+/* =====================================================
    HOME EVENTS
--------------------- */
+===================================================== */
 
 function attachHomeEvents() {
+
 
   document
     .querySelectorAll(".open-project")
@@ -336,7 +529,9 @@ function attachHomeEvents() {
 
       button.addEventListener(
         "click",
-        () => {
+        event => {
+
+          event.stopPropagation();
 
           openProject(
             button.dataset.id
@@ -354,7 +549,9 @@ function attachHomeEvents() {
 
       button.addEventListener(
         "click",
-        () => {
+        event => {
+
+          event.stopPropagation();
 
           setFocus(
             button.dataset.id
@@ -368,18 +565,23 @@ function attachHomeEvents() {
 }
 
 
-/* --------------------
+/* =====================================================
    FOCUS
--------------------- */
+===================================================== */
 
 function setFocus(id) {
 
-  projects.forEach(
-    project => {
+  projects.forEach(project => {
+
+    if (!project.cancelled) {
+
       project.focus =
         project.id === id;
+
     }
-  );
+
+  });
+
 
   saveData();
 
@@ -388,17 +590,19 @@ function setFocus(id) {
 }
 
 
-/* --------------------
+/* =====================================================
    PROJECT PAGE
--------------------- */
+===================================================== */
 
 function openProject(id) {
 
   currentProjectId = id;
 
+
   document
     .getElementById("homeView")
     .classList.add("hidden");
+
 
   document
     .getElementById("projectView")
@@ -415,17 +619,20 @@ function renderProject() {
   const project =
     getProject(currentProjectId);
 
-  if (!project) return;
+
+  if (!project) {
+
+    renderHome();
+
+    return;
+
+  }
 
 
   document
     .getElementById("projectTitle")
-    .textContent = project.name;
-
-
-  document
-    .getElementById("projectCity")
-    .textContent = project.city;
+    .textContent =
+    project.name;
 
 
   renderNextSteps(project);
@@ -435,9 +642,9 @@ function renderProject() {
 }
 
 
-/* --------------------
+/* =====================================================
    NEXT STEPS
--------------------- */
+===================================================== */
 
 function renderNextSteps(project) {
 
@@ -445,6 +652,7 @@ function renderNextSteps(project) {
     document.getElementById(
       "nextSteps"
     );
+
 
   container.innerHTML = "";
 
@@ -455,6 +663,7 @@ function renderNextSteps(project) {
       const row =
         document.createElement("div");
 
+
       row.className =
         "next-step";
 
@@ -462,14 +671,21 @@ function renderNextSteps(project) {
       row.innerHTML = `
 
         <div class="next-number">
+
           ${index + 1}
+
         </div>
+
 
         <div class="next-text">
+
           ${escapeHtml(step.text)}
+
         </div>
 
+
         <div class="step-actions">
+
 
           ${
             index > 0
@@ -484,8 +700,10 @@ function renderNextSteps(project) {
               : ""
           }
 
+
           ${
-            index < project.nextSteps.length - 1
+            index <
+            project.nextSteps.length - 1
               ? `
                 <button
                   class="move-step-down"
@@ -497,12 +715,14 @@ function renderNextSteps(project) {
               : ""
           }
 
+
           <button
             class="delete-step"
             data-id="${step.id}"
           >
             ×
           </button>
+
 
         </div>
 
@@ -521,6 +741,7 @@ function renderNextSteps(project) {
 
 
 function attachStepEvents() {
+
 
   document
     .querySelectorAll(".move-step-up")
@@ -580,14 +801,15 @@ function attachStepEvents() {
 }
 
 
-/* --------------------
-   MOVE STEP
--------------------- */
+/* =====================================================
+   MOVE / DELETE
+===================================================== */
 
 function moveStep(index, direction) {
 
   const project =
     getProject(currentProjectId);
+
 
   const newIndex =
     index + direction;
@@ -595,7 +817,8 @@ function moveStep(index, direction) {
 
   if (
     newIndex < 0 ||
-    newIndex >= project.nextSteps.length
+    newIndex >=
+      project.nextSteps.length
   ) {
 
     return;
@@ -606,8 +829,10 @@ function moveStep(index, direction) {
   const temp =
     project.nextSteps[index];
 
+
   project.nextSteps[index] =
     project.nextSteps[newIndex];
+
 
   project.nextSteps[newIndex] =
     temp;
@@ -619,10 +844,6 @@ function moveStep(index, direction) {
 
 }
 
-
-/* --------------------
-   DELETE STEP
--------------------- */
 
 function deleteStep(id) {
 
@@ -643,9 +864,9 @@ function deleteStep(id) {
 }
 
 
-/* --------------------
-   ADD STEP
--------------------- */
+/* =====================================================
+   ADD NEXT STEP
+===================================================== */
 
 document
   .getElementById("addStepBtn")
@@ -662,7 +883,7 @@ document
       ) {
 
         alert(
-          "Keep the list to 3 steps max."
+          "Keep it to 3 next commits."
         );
 
         return;
@@ -676,16 +897,20 @@ document
         );
 
 
-      if (!text) return;
+      if (!text) {
+
+        return;
+
+      }
 
 
       project.nextSteps.push({
 
-        id: crypto.randomUUID(),
+        id:
+          crypto.randomUUID(),
 
-        text: text,
-
-        done: false
+        text:
+          text.trim()
 
       });
 
@@ -698,9 +923,9 @@ document
   );
 
 
-/* --------------------
+/* =====================================================
    HISTORY
--------------------- */
+===================================================== */
 
 function renderHistory(project) {
 
@@ -708,6 +933,7 @@ function renderHistory(project) {
     document.getElementById(
       "commitHistory"
     );
+
 
   container.innerHTML = "";
 
@@ -720,9 +946,13 @@ function renderHistory(project) {
   if (!commits.length) {
 
     container.innerHTML =
-      `<div class="latest">
-        No commits yet.
-      </div>`;
+      `
+        <div
+          class="commit-placeholder"
+        >
+          No commits yet.
+        </div>
+      `;
 
     return;
 
@@ -734,6 +964,7 @@ function renderHistory(project) {
     const row =
       document.createElement("div");
 
+
     row.className =
       "commit";
 
@@ -741,14 +972,32 @@ function renderHistory(project) {
     row.innerHTML = `
 
       <div class="commit-main">
-        ${escapeHtml(commit.text)}
+
+        ${escapeHtml(
+          commit.text
+        )}
+
       </div>
+
 
       <div class="commit-meta">
 
-        ${escapeHtml(project.city)}
-        ·
-        ${formatDate(commit.createdAt)}
+        <span class="commit-code">
+
+          ${escapeHtml(
+            commit.code
+          )}
+
+        </span>
+
+
+        <span>
+
+          ${formatDate(
+            commit.createdAt
+          )}
+
+        </span>
 
       </div>
 
@@ -762,9 +1011,9 @@ function renderHistory(project) {
 }
 
 
-/* --------------------
+/* =====================================================
    COMMIT MODAL
--------------------- */
+===================================================== */
 
 document
   .getElementById("commitBtn")
@@ -801,6 +1050,7 @@ function renderCommitSteps(project) {
       "commitNextSteps"
     );
 
+
   container.innerHTML = "";
 
 
@@ -810,6 +1060,7 @@ function renderCommitSteps(project) {
       const row =
         document.createElement("div");
 
+
       row.className =
         "next-step";
 
@@ -817,11 +1068,18 @@ function renderCommitSteps(project) {
       row.innerHTML = `
 
         <div class="next-number">
+
           ${index + 1}
+
         </div>
 
+
         <div class="next-text">
-          ${escapeHtml(step.text)}
+
+          ${escapeHtml(
+            step.text
+          )}
+
         </div>
 
       `;
@@ -835,9 +1093,9 @@ function renderCommitSteps(project) {
 }
 
 
-/* --------------------
-   ADD COMMIT STEP
--------------------- */
+/* =====================================================
+   ADD NEXT STEP FROM COMMIT
+===================================================== */
 
 document
   .getElementById("addCommitStepBtn")
@@ -854,7 +1112,7 @@ document
       ) {
 
         alert(
-          "Keep the list to 3 steps max."
+          "Keep it to 3 next commits."
         );
 
         return;
@@ -868,16 +1126,20 @@ document
         );
 
 
-      if (!text) return;
+      if (!text) {
+
+        return;
+
+      }
 
 
       project.nextSteps.push({
 
-        id: crypto.randomUUID(),
+        id:
+          crypto.randomUUID(),
 
-        text: text,
-
-        done: false
+        text:
+          text.trim()
 
       });
 
@@ -892,9 +1154,9 @@ document
   );
 
 
-/* --------------------
+/* =====================================================
    SAVE COMMIT
--------------------- */
+===================================================== */
 
 document
   .getElementById("saveCommitBtn")
@@ -908,7 +1170,9 @@ document
 
       const text =
         document
-          .getElementById("commitInput")
+          .getElementById(
+            "commitInput"
+          )
           .value
           .trim();
 
@@ -924,13 +1188,16 @@ document
       }
 
 
-      /* Create commit */
-
       project.commits.push({
 
-        id: crypto.randomUUID(),
+        id:
+          crypto.randomUUID(),
 
-        text: text,
+        text:
+          text,
+
+        code:
+          generateCommitCode(),
 
         createdAt:
           new Date().toISOString()
@@ -939,10 +1206,8 @@ document
 
 
       /*
-        The first NEXT item is considered
-        the thing you just pushed forward.
-
-        Remove it after committing.
+        The first next commit
+        becomes the thing you just pushed.
       */
 
       if (
@@ -958,7 +1223,9 @@ document
 
 
       document
-        .getElementById("commitModal")
+        .getElementById(
+          "commitModal"
+        )
         .classList.add("hidden");
 
 
@@ -968,9 +1235,9 @@ document
   );
 
 
-/* --------------------
-   CLOSE MODALS
--------------------- */
+/* =====================================================
+   CANCEL COMMIT MODAL
+===================================================== */
 
 document
   .getElementById("cancelCommitBtn")
@@ -979,16 +1246,18 @@ document
     () => {
 
       document
-        .getElementById("commitModal")
+        .getElementById(
+          "commitModal"
+        )
         .classList.add("hidden");
 
     }
   );
 
 
-/* --------------------
+/* =====================================================
    NEW PROJECT
--------------------- */
+===================================================== */
 
 document
   .getElementById("addProjectBtn")
@@ -997,29 +1266,44 @@ document
     () => {
 
       document
-        .getElementById("projectNameInput")
+        .getElementById(
+          "projectNameInput"
+        )
         .value = "";
 
-      document
-        .getElementById("projectCityInput")
-        .value = "";
 
       document
-        .getElementById("projectModal")
+        .getElementById(
+          "projectModal"
+        )
         .classList.remove("hidden");
+
+      setTimeout(() => {
+
+        document
+          .getElementById(
+            "projectNameInput"
+          )
+          .focus();
+
+      }, 50);
 
     }
   );
 
 
 document
-  .getElementById("cancelProjectBtn")
+  .getElementById(
+    "cancelProjectModalBtn"
+  )
   .addEventListener(
     "click",
     () => {
 
       document
-        .getElementById("projectModal")
+        .getElementById(
+          "projectModal"
+        )
         .classList.add("hidden");
 
     }
@@ -1027,50 +1311,55 @@ document
 
 
 document
-  .getElementById("saveProjectBtn")
+  .getElementById(
+    "saveProjectBtn"
+  )
   .addEventListener(
     "click",
     () => {
 
       const name =
         document
-          .getElementById("projectNameInput")
-          .value
-          .trim();
-
-
-      const city =
-        document
-          .getElementById("projectCityInput")
+          .getElementById(
+            "projectNameInput"
+          )
           .value
           .trim();
 
 
       if (!name) {
 
-        alert(
-          "Give the project a name."
-        );
-
         return;
 
       }
 
 
+      projects.forEach(project => {
+
+        project.focus = false;
+
+      });
+
+
       projects.push({
 
-        id: crypto.randomUUID(),
+        id:
+          crypto.randomUUID(),
 
-        name: name,
-
-        city: city || "—",
+        name:
+          name,
 
         focus:
-          projects.length === 0,
+          true,
 
-        nextSteps: [],
+        cancelled:
+          false,
 
-        commits: []
+        nextSteps:
+          [],
+
+        commits:
+          []
 
       });
 
@@ -1079,7 +1368,9 @@ document
 
 
       document
-        .getElementById("projectModal")
+        .getElementById(
+          "projectModal"
+        )
         .classList.add("hidden");
 
 
@@ -1089,9 +1380,79 @@ document
   );
 
 
-/* --------------------
+/* =====================================================
+   CANCEL PROJECT
+===================================================== */
+
+document
+  .getElementById(
+    "cancelProjectBtn"
+  )
+  .addEventListener(
+    "click",
+    () => {
+
+      const project =
+        getProject(currentProjectId);
+
+
+      if (!project) {
+
+        return;
+
+      }
+
+
+      const confirmed =
+        confirm(
+          `Cancel "${project.name}"?`
+        );
+
+
+      if (!confirmed) {
+
+        return;
+
+      }
+
+
+      project.cancelled = true;
+
+      project.focus = false;
+
+
+      /*
+        Keep the project in localStorage.
+        We are hiding it from active projects,
+        not deleting its history.
+      */
+
+
+      const remaining =
+        getActiveProjects();
+
+
+      if (remaining.length) {
+
+        remaining[0].focus = true;
+
+      }
+
+
+      saveData();
+
+
+      currentProjectId = null;
+
+      renderHome();
+
+    }
+  );
+
+
+/* =====================================================
    BACK
--------------------- */
+===================================================== */
 
 document
   .getElementById("backBtn")
@@ -1107,29 +1468,8 @@ document
   );
 
 
-/* --------------------
-   ESCAPE HTML
--------------------- */
-
-function escapeHtml(value) {
-
-  return String(value)
-
-    .replaceAll("&", "&amp;")
-
-    .replaceAll("<", "&lt;")
-
-    .replaceAll(">", "&gt;")
-
-    .replaceAll('"', "&quot;")
-
-    .replaceAll("'", "&#039;");
-
-}
-
-
-/* --------------------
+/* =====================================================
    START
--------------------- */
+===================================================== */
 
 renderHome();
