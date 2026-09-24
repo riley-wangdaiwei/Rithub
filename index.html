@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Projects</title>
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+
+  <header class="topbar">
+    <div class="logo">PROJECTS</div>
+
+    <button id="addProjectBtn" class="ghost-button">
+      + Project
+    </button>
+  </header>
+
+
+  <main class="container">
+
+    <!-- HOME -->
+    <section id="homeView">
+
+      <div id="projectsGrid" class="projects-grid"></div>
+
+    </section>
+
+
+    <!-- PROJECT PAGE -->
+    <section id="projectView" class="hidden">
+
+      <button id="backBtn" class="back-button">
+        ← Projects
+      </button>
+
+      <div class="project-header">
+        <div>
+          <div id="projectCity" class="project-city"></div>
+          <h1 id="projectTitle"></h1>
+        </div>
+
+        <button id="commitBtn" class="commit-button">
+          + Commit
+        </button>
+      </div>
+
+
+      <div class="project-section">
+
+        <div class="section-label">
+          NEXT
+        </div>
+
+        <div id="nextSteps"></div>
+
+        <button id="addStepBtn" class="small-button">
+          + Next step
+        </button>
+
+      </div>
+
+
+      <div class="project-section">
+
+        <div class="section-label">
+          HISTORY
+        </div>
+
+        <div id="commitHistory"></div>
+
+      </div>
+
+    </section>
+
+  </main>
+
+
+  <!-- PROJECT MODAL -->
+  <div id="projectModal" class="modal hidden">
+
+    <div class="modal-card">
+
+      <div class="modal-title">
+        NEW PROJECT
+      </div>
+
+      <input
+        id="projectNameInput"
+        placeholder="Project name"
+      />
+
+      <input
+        id="projectCityInput"
+        placeholder="Place — e.g. Dakar"
+      />
+
+      <div class="modal-actions">
+
+        <button id="cancelProjectBtn" class="ghost-button">
+          Cancel
+        </button>
+
+        <button id="saveProjectBtn" class="commit-button">
+          Create
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <!-- COMMIT MODAL -->
+  <div id="commitModal" class="modal hidden">
+
+    <div class="modal-card">
+
+      <div class="modal-title">
+        NEW COMMIT
+      </div>
+
+      <textarea
+        id="commitInput"
+        placeholder="What did you do?"
+      ></textarea>
+
+      <div class="section-label modal-next-title">
+        NEXT
+      </div>
+
+      <div id="commitNextSteps"></div>
+
+      <button id="addCommitStepBtn" class="small-button">
+        + Next step
+      </button>
+
+      <div class="modal-actions">
+
+        <button id="cancelCommitBtn" class="ghost-button">
+          Cancel
+        </button>
+
+        <button id="saveCommitBtn" class="commit-button">
+          Commit
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <script src="app.js"></script>
+
+</body>
+</html>

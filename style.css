@@ -1,0 +1,536 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+
+  font-family:
+    Inter,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+
+  background: #f7f7f5;
+  color: #171717;
+}
+
+
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+
+button {
+  cursor: pointer;
+}
+
+
+/* --------------------
+   TOP BAR
+-------------------- */
+
+.topbar {
+  height: 72px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 0 40px;
+
+  border-bottom: 1px solid #ddd;
+}
+
+
+.logo {
+  font-size: 14px;
+  letter-spacing: 0.12em;
+  font-weight: 600;
+}
+
+
+/* --------------------
+   MAIN
+-------------------- */
+
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+
+  padding: 50px 30px 100px;
+}
+
+
+/* --------------------
+   PROJECT GRID
+-------------------- */
+
+.projects-grid {
+
+  display: grid;
+
+  grid-template-columns:
+    repeat(3, 1fr);
+
+  gap: 18px;
+
+  align-items: stretch;
+}
+
+
+.project-card {
+
+  min-height: 240px;
+
+  background: #fff;
+
+  border: 1px solid #ddd;
+
+  padding: 26px;
+
+  display: flex;
+
+  flex-direction: column;
+
+  justify-content: space-between;
+
+  transition: 0.15s;
+}
+
+
+.project-card:hover {
+  border-color: #999;
+}
+
+
+.project-card.focus {
+
+  grid-column: span 2;
+
+  min-height: 300px;
+
+}
+
+
+.project-top {
+
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+
+.project-name {
+  font-size: 22px;
+  font-weight: 500;
+}
+
+
+.project-place {
+
+  margin-top: 7px;
+
+  font-size: 12px;
+
+  color: #888;
+
+  letter-spacing: 0.05em;
+}
+
+
+.focus-label {
+
+  font-size: 10px;
+
+  letter-spacing: 0.15em;
+
+  color: #888;
+}
+
+
+/* --------------------
+   NEXT / LATEST
+-------------------- */
+
+.project-info {
+
+  display: grid;
+
+  gap: 22px;
+
+  margin-top: 30px;
+}
+
+
+.info-block {
+  border-top: 1px solid #eee;
+  padding-top: 10px;
+}
+
+
+.info-label {
+
+  font-size: 10px;
+
+  letter-spacing: 0.15em;
+
+  color: #888;
+
+  margin-bottom: 7px;
+}
+
+
+.info-text {
+
+  font-size: 15px;
+
+  line-height: 1.45;
+}
+
+
+.latest {
+  color: #777;
+}
+
+
+/* --------------------
+   BUTTONS
+-------------------- */
+
+.ghost-button {
+
+  background: transparent;
+
+  border: 1px solid #ccc;
+
+  padding: 8px 12px;
+
+  font-size: 12px;
+}
+
+
+.commit-button {
+
+  background: #171717;
+
+  color: white;
+
+  border: none;
+
+  padding: 10px 15px;
+
+  font-size: 12px;
+}
+
+
+.small-button {
+
+  background: none;
+
+  border: none;
+
+  padding: 8px 0;
+
+  color: #777;
+
+  font-size: 12px;
+}
+
+
+.small-button:hover {
+  color: #111;
+}
+
+
+.back-button {
+
+  background: none;
+
+  border: none;
+
+  padding: 0;
+
+  color: #777;
+
+  margin-bottom: 30px;
+}
+
+
+/* --------------------
+   PROJECT PAGE
+-------------------- */
+
+.project-header {
+
+  display: flex;
+
+  justify-content: space-between;
+
+  align-items: flex-end;
+
+  margin-bottom: 70px;
+}
+
+
+.project-header h1 {
+
+  margin: 8px 0 0;
+
+  font-size: 42px;
+
+  font-weight: 400;
+}
+
+
+.project-city {
+
+  font-size: 11px;
+
+  letter-spacing: 0.12em;
+
+  color: #888;
+}
+
+
+.project-section {
+
+  margin-bottom: 60px;
+}
+
+
+.section-label {
+
+  font-size: 10px;
+
+  letter-spacing: 0.15em;
+
+  color: #888;
+
+  margin-bottom: 15px;
+}
+
+
+/* --------------------
+   NEXT STEPS
+-------------------- */
+
+.next-step {
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 12px;
+
+  padding: 13px 0;
+
+  border-bottom: 1px solid #eee;
+}
+
+
+.next-number {
+
+  width: 20px;
+
+  color: #999;
+
+  font-size: 11px;
+}
+
+
+.next-text {
+  flex: 1;
+}
+
+
+.step-actions {
+  display: flex;
+  gap: 8px;
+}
+
+
+.step-actions button {
+
+  border: none;
+
+  background: none;
+
+  color: #aaa;
+
+  font-size: 13px;
+}
+
+
+.step-actions button:hover {
+  color: #111;
+}
+
+
+/* --------------------
+   HISTORY
+-------------------- */
+
+.commit {
+
+  padding: 20px 0;
+
+  border-top: 1px solid #eee;
+}
+
+
+.commit-main {
+
+  font-size: 16px;
+
+  line-height: 1.5;
+}
+
+
+.commit-meta {
+
+  margin-top: 10px;
+
+  color: #888;
+
+  font-size: 11px;
+
+  letter-spacing: 0.05em;
+}
+
+
+/* --------------------
+   MODAL
+-------------------- */
+
+.modal {
+
+  position: fixed;
+
+  inset: 0;
+
+  background: rgba(0,0,0,0.15);
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+}
+
+
+.modal-card {
+
+  width: 460px;
+
+  background: white;
+
+  border: 1px solid #ddd;
+
+  padding: 30px;
+}
+
+
+.modal-title {
+
+  font-size: 11px;
+
+  letter-spacing: 0.15em;
+
+  color: #888;
+
+  margin-bottom: 22px;
+}
+
+
+input,
+textarea {
+
+  width: 100%;
+
+  border: 1px solid #ddd;
+
+  background: white;
+
+  padding: 12px;
+
+  margin-bottom: 12px;
+
+  outline: none;
+}
+
+
+textarea {
+
+  min-height: 120px;
+
+  resize: vertical;
+}
+
+
+input:focus,
+textarea:focus {
+
+  border-color: #888;
+}
+
+
+.modal-actions {
+
+  display: flex;
+
+  justify-content: flex-end;
+
+  gap: 10px;
+
+  margin-top: 20px;
+}
+
+
+.modal-next-title {
+  margin-top: 20px;
+}
+
+
+/* --------------------
+   UTIL
+-------------------- */
+
+.hidden {
+  display: none !important;
+}
+
+
+/* --------------------
+   MOBILE
+-------------------- */
+
+@media (max-width: 800px) {
+
+  .projects-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .project-card.focus {
+    grid-column: span 1;
+  }
+
+  .project-header {
+    align-items: flex-start;
+    gap: 30px;
+    flex-direction: column;
+  }
+
+  .topbar {
+    padding: 0 20px;
+  }
+
+  .container {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+}
