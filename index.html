@@ -2,7 +2,10 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  />
 
   <title>Rithub</title>
 
@@ -13,102 +16,114 @@
 
   <header class="topbar">
 
-    <div class="brand-left">
-      PROJECTS
-    </div>
+    <div></div>
 
-    <div class="brand-right">
-
-      <button
-        id="addProjectBtn"
-        class="plus-button"
-        aria-label="New project"
-      >
-        +
-      </button>
-
-      <div class="brand-name">
-        Rithub
-      </div>
-
-    </div>
+    <button
+      id="newProjectBtn"
+      class="new-project-button"
+    >
+      + Rithub it
+    </button>
 
   </header>
 
 
-  <main class="container">
+  <main>
 
-    <!-- HOME -->
+    <!-- =========================
+         HOME
+    ========================== -->
 
-    <section id="homeView">
+    <section
+      id="homeView"
+      class="page"
+    >
 
-      <div id="projectsGrid" class="projects-grid"></div>
+      <div
+        id="projectsList"
+        class="projects-list"
+      ></div>
 
     </section>
 
 
-    <!-- PROJECT -->
+    <!-- =========================
+         PROJECT
+    ========================== -->
 
-    <section id="projectView" class="hidden">
+    <section
+      id="projectView"
+      class="page hidden"
+    >
 
-      <div class="project-nav">
+      <div class="project-top">
 
         <button
-          id="backBtn"
-          class="text-button"
+          id="backButton"
+          class="plain-button"
         >
-          ← Projects
+          &lt;- BACK TO THE ALL WORK
         </button>
 
         <button
-          id="cancelProjectBtn"
+          id="cancelProjectButton"
           class="cancel-button"
         >
-          Cancel Project
+          CANCEL PROJECT
         </button>
 
       </div>
 
 
-      <div class="project-header">
+      <div class="project-title-row">
 
         <h1 id="projectTitle"></h1>
 
         <button
-          id="commitBtn"
+          id="commitButton"
           class="commit-button"
         >
-          + Commit
+          COMMIT
         </button>
 
       </div>
 
 
-      <section class="project-section">
+      <!-- NEXT COMMITS -->
 
-        <div class="section-label">
-          NEXT COMMITS
+      <section class="section">
+
+        <div class="section-heading">
+          NEXT COMMIT
         </div>
 
-        <div id="nextSteps"></div>
+        <div
+          id="nextCommitList"
+          class="next-list"
+        ></div>
 
         <button
-          id="addStepBtn"
-          class="text-button"
+          id="addNextButton"
+          class="plain-button add-button"
         >
-          + Next step
+          + ADD NEXT
         </button>
 
       </section>
 
 
-      <section class="project-section">
+      <!-- HISTORY -->
 
-        <div class="section-label">
+      <section class="section history-section">
+
+        <div class="section-heading">
           HISTORY
         </div>
 
-        <div id="commitHistory"></div>
+        <div
+          id="historyList"
+          class="history-list"
+        ></div>
 
       </section>
 
@@ -117,36 +132,42 @@
   </main>
 
 
-  <!-- NEW PROJECT -->
+  <!-- =========================
+       NEW PROJECT MODAL
+  ========================== -->
 
-  <div id="projectModal" class="modal hidden">
+  <div
+    id="projectModal"
+    class="modal hidden"
+  >
 
-    <div class="modal-card">
+    <div class="modal-inner">
 
-      <div class="modal-title">
+      <div class="modal-heading">
         NEW PROJECT
       </div>
 
       <input
         id="projectNameInput"
-        placeholder="Project name"
+        type="text"
+        placeholder="name"
         autocomplete="off"
       />
 
       <div class="modal-actions">
 
         <button
-          id="cancelProjectModalBtn"
-          class="text-button"
+          id="closeProjectModal"
+          class="plain-button"
         >
-          Cancel
+          CANCEL
         </button>
 
         <button
-          id="saveProjectBtn"
+          id="createProjectButton"
           class="commit-button"
         >
-          Create
+          CREATE
         </button>
 
       </div>
@@ -156,50 +177,58 @@
   </div>
 
 
-  <!-- NEW COMMIT -->
+  <!-- =========================
+       COMMIT MODAL
+  ========================== -->
 
-  <div id="commitModal" class="modal hidden">
+  <div
+    id="commitModal"
+    class="modal hidden"
+  >
 
-    <div class="modal-card">
+    <div class="modal-inner">
 
-      <div class="modal-title">
+      <div class="modal-heading">
         NEW COMMIT
       </div>
 
       <textarea
         id="commitInput"
-        placeholder="What did you do?"
+        placeholder="what happened?"
       ></textarea>
 
 
-      <div class="section-label">
-        NEXT COMMITS
+      <div class="commit-next-heading">
+        NEXT
       </div>
 
-      <div id="commitNextSteps"></div>
+      <div
+        id="commitNextList"
+        class="commit-next-list"
+      ></div>
 
       <button
-        id="addCommitStepBtn"
-        class="text-button"
+        id="addCommitNextButton"
+        class="plain-button add-button"
       >
-        + Next step
+        + ADD NEXT
       </button>
 
 
       <div class="modal-actions">
 
         <button
-          id="cancelCommitBtn"
-          class="text-button"
+          id="closeCommitModal"
+          class="plain-button"
         >
-          Cancel
+          CANCEL
         </button>
 
         <button
-          id="saveCommitBtn"
+          id="saveCommitButton"
           class="commit-button"
         >
-          Commit
+          COMMIT
         </button>
 
       </div>
@@ -209,8 +238,10 @@
   </div>
 
 
-  <footer class="footer-mark">
-    ALL WORK / NO PLAY
+  <footer class="footer">
+
+    ALL WORK AND NO PLAY MAKES ME A LLUD GIRL
+
   </footer>
 
 

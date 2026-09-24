@@ -1,17 +1,18 @@
-const STORAGE_KEY = "rithub-projects";
+const STORAGE_KEY = "rithub-v2";
 
 
 /* =====================================================
-   RANDOM CITY CODE
+   CITY SYSTEM
+   These are just the little places Rithub uses
+   to make its goofy commit codes.
 ===================================================== */
 
 const CITIES = [
 
   "dakar",
-  "tokyo",
-  "paris",
-  "lagos",
   "oslo",
+  "tokyo",
+  "lagos",
   "lima",
   "kyoto",
   "accra",
@@ -23,49 +24,55 @@ const CITIES = [
   "lisbon",
   "cairo",
   "taipei",
-  "marrakesh",
   "athens",
   "helsinki",
-  "mexico-city",
-  "jakarta",
-  "vilnius",
-  "tunis",
-  "reykjavik",
   "vienna",
   "istanbul",
   "montreal",
   "havana",
+  "jakarta",
+  "vilnius",
+  "reykjavik",
+  "marrakesh",
   "melbourne",
-  "buenos-aires"
+  "quito",
+  "naples",
+  "tunis",
+  "prague"
 
 ];
 
 
+function randomCity() {
+
+  return CITIES[
+    Math.floor(
+      Math.random() *
+      CITIES.length
+    )
+  ];
+
+}
+
+
 function generateCommitCode() {
 
-  const first =
-    CITIES[
-      Math.floor(
-        Math.random() * CITIES.length
-      )
-    ];
+  const city1 =
+    randomCity();
+
+  let city2 =
+    randomCity();
 
 
-  let second;
+  while (city2 === city1) {
 
-  do {
+    city2 =
+      randomCity();
 
-    second =
-      CITIES[
-        Math.floor(
-          Math.random() * CITIES.length
-        )
-      ];
-
-  } while (second === first);
+  }
 
 
-  return `${first}-${second}`;
+  return `${city1}-${city2}`;
 
 }
 
@@ -76,142 +83,173 @@ function generateCommitCode() {
 
 let projects =
   JSON.parse(
-    localStorage.getItem(STORAGE_KEY)
-  ) || [
+    localStorage.getItem(
+      STORAGE_KEY
+    )
+  );
+
+
+/*
+   First launch
+*/
+
+if (!projects) {
+
+  projects = [
 
     {
-      id: crypto.randomUUID(),
+      id:
+        crypto.randomUUID(),
 
-      name: "GAMBIA",
+      name:
+        "GAMBIA",
 
-      focus: true,
+      focus:
+        true,
 
-      cancelled: false,
+      cancelled:
+        false,
 
-      nextSteps: [
+      next:
+        [
 
-        {
-          id: crypto.randomUUID(),
-          text: "Finish payment flow"
-        },
+          {
+            id:
+              crypto.randomUUID(),
 
-        {
-          id: crypto.randomUUID(),
-          text: "Compare settlement options"
-        },
+            text:
+              "Finish payment flow"
 
-        {
-          id: crypto.randomUUID(),
-          text: "Talk to GG"
-        }
+          },
 
-      ],
+          {
+            id:
+              crypto.randomUUID(),
 
-      commits: [
+            text:
+              "Compare settlement options"
 
-        {
-          id: crypto.randomUUID(),
+          },
 
-          text: "Payment flow v1",
+          {
+            id:
+              crypto.randomUUID(),
 
-          code: generateCommitCode(),
+            text:
+              "Talk to GG"
 
-          createdAt:
-            new Date().toISOString()
+          }
 
-        }
+        ],
 
-      ]
+      commits:
+        [
+
+          {
+            id:
+              crypto.randomUUID(),
+
+            text:
+              "Mapped payment flow v1",
+
+            code:
+              generateCommitCode(),
+
+            createdAt:
+              new Date().toISOString()
+
+          }
+
+        ]
 
     },
 
 
     {
-      id: crypto.randomUUID(),
+      id:
+        crypto.randomUUID(),
 
-      name: "STARTUP",
+      name:
+        "STARTUP",
 
-      focus: false,
+      focus:
+        false,
 
-      cancelled: false,
+      cancelled:
+        false,
 
-      nextSteps: [
+      next:
+        [
 
-        {
-          id: crypto.randomUUID(),
-          text: "Build first interaction"
-        }
+          {
+            id:
+              crypto.randomUUID(),
 
-      ],
+            text:
+              "Build first interaction"
 
-      commits: []
+          }
+
+        ],
+
+      commits:
+        []
 
     },
 
 
     {
-      id: crypto.randomUUID(),
+      id:
+        crypto.randomUUID(),
 
-      name: "PRIVACY",
+      name:
+        "PRIVACY",
 
-      focus: false,
+      focus:
+        false,
 
-      cancelled: false,
+      cancelled:
+        false,
 
-      nextSteps: [
+      next:
+        [
 
-        {
-          id: crypto.randomUUID(),
-          text: "Read next paper"
-        }
+          {
+            id:
+              crypto.randomUUID(),
 
-      ],
+            text:
+              "Read next paper"
 
-      commits: []
+          }
+
+        ],
+
+      commits:
+        []
 
     }
 
   ];
 
+  save();
 
-let currentProjectId = null;
-
-
-/* =====================================================
-   MIGRATION
-===================================================== */
-
-projects.forEach(project => {
-
-  if (project.cancelled === undefined) {
-
-    project.cancelled = false;
-
-  }
-
-
-  project.commits.forEach(commit => {
-
-    if (!commit.code) {
-
-      commit.code =
-        generateCommitCode();
-
-    }
-
-  });
-
-});
-
-
-saveData();
+}
 
 
 /* =====================================================
-   SAVE
+   STATE
 ===================================================== */
 
-function saveData() {
+let currentProjectId =
+  null;
+
+
+/* =====================================================
+   STORAGE
+===================================================== */
+
+function save() {
 
   localStorage.setItem(
 
@@ -231,28 +269,37 @@ function saveData() {
 function getProject(id) {
 
   return projects.find(
-    project => project.id === id
+
+    project =>
+      project.id === id
+
   );
 
 }
 
 
-function getActiveProjects() {
+function activeProjects() {
 
   return projects.filter(
-    project => !project.cancelled
+
+    project =>
+      !project.cancelled
+
   );
 
 }
 
 
-function getLatestCommit(project) {
+function latestCommit(project) {
 
-  if (!project.commits.length) {
+  if (
+    !project.commits.length
+  ) {
 
     return null;
 
   }
+
 
   return project.commits[
     project.commits.length - 1
@@ -261,7 +308,7 @@ function getLatestCommit(project) {
 }
 
 
-function formatDate(dateString) {
+function relativeTime(dateString) {
 
   const date =
     new Date(dateString);
@@ -269,50 +316,68 @@ function formatDate(dateString) {
   const now =
     new Date();
 
-  const diff =
-    (now - date) / 1000;
+  const seconds =
+    (
+      now - date
+    ) / 1000;
 
 
-  if (diff < 60) {
+  if (seconds < 60) {
 
     return "just now";
 
   }
 
 
-  if (diff < 3600) {
+  if (seconds < 3600) {
 
-    return `${Math.floor(
-      diff / 60
-    )}m ago`;
-
-  }
-
-
-  if (diff < 86400) {
-
-    return `${Math.floor(
-      diff / 3600
-    )}h ago`;
+    return (
+      Math.floor(
+        seconds / 60
+      )
+      + "m ago"
+    );
 
   }
 
 
-  if (diff < 604800) {
+  if (seconds < 86400) {
 
-    return `${Math.floor(
-      diff / 86400
-    )}d ago`;
+    return (
+      Math.floor(
+        seconds / 3600
+      )
+      + "h ago"
+    );
+
+  }
+
+
+  if (seconds < 604800) {
+
+    return (
+      Math.floor(
+        seconds / 86400
+      )
+      + "d ago"
+    );
 
   }
 
 
   return date.toLocaleDateString(
+
     undefined,
+
     {
-      month: "short",
-      day: "numeric"
+      month:
+        "short",
+
+      day:
+        "numeric"
+
     }
+
   );
 
 }
@@ -322,15 +387,30 @@ function escapeHtml(value) {
 
   return String(value)
 
-    .replaceAll("&", "&amp;")
+    .replaceAll(
+      "&",
+      "&amp;"
+    )
 
-    .replaceAll("<", "&lt;")
+    .replaceAll(
+      "<",
+      "&lt;"
+    )
 
-    .replaceAll(">", "&gt;")
+    .replaceAll(
+      ">",
+      "&gt;"
+    )
 
-    .replaceAll('"', "&quot;")
+    .replaceAll(
+      '"',
+      "&quot;"
+    )
 
-    .replaceAll("'", "&#039;");
+    .replaceAll(
+      "'",
+      "&#039;"
+    );
 
 }
 
@@ -342,47 +422,61 @@ function escapeHtml(value) {
 function renderHome() {
 
   document
-    .getElementById("homeView")
-    .classList.remove("hidden");
-
-
-  document
-    .getElementById("projectView")
-    .classList.add("hidden");
-
-
-  const grid =
-    document.getElementById(
-      "projectsGrid"
+    .getElementById(
+      "homeView"
+    )
+    .classList.remove(
+      "hidden"
     );
 
 
-  grid.innerHTML = "";
+  document
+    .getElementById(
+      "projectView"
+    )
+    .classList.add(
+      "hidden"
+    );
 
 
-  const activeProjects =
-    getActiveProjects();
+  const container =
+    document.getElementById(
+      "projectsList"
+    );
 
 
-  activeProjects.forEach(
+  container.innerHTML = "";
+
+
+  const projectsToShow =
+    activeProjects();
+
+
+  projectsToShow.forEach(
+
     project => {
 
       const latest =
-        getLatestCommit(project);
+        latestCommit(
+          project
+        );
 
 
-      const next =
-        project.nextSteps.length
-          ? project.nextSteps[0].text
-          : "Nothing queued";
+      const nextCommit =
+
+        project.next.length
+          ? project.next[0].text
+          : "—";
 
 
-      const card =
-        document.createElement("article");
+      const row =
+        document.createElement(
+          "div"
+        );
 
 
-      card.className =
-        "project-card" +
+      row.className =
+        "project-row" +
         (
           project.focus
             ? " focus"
@@ -390,86 +484,46 @@ function renderHome() {
         );
 
 
-      card.innerHTML = `
+      row.innerHTML = `
 
         <div>
+
+          <div
+            class="project-name"
+            data-id="${project.id}"
+          >
+
+            ${escapeHtml(
+              project.name
+            )}
+
+          </div>
+
 
           ${
             project.focus
               ? `
-                <div class="focus-label">
-                  FOCUS
+                <div class="focus-mark">
+                  CURRENT
                 </div>
               `
               : ""
           }
 
+        </div>
 
-          <div class="project-name">
 
-            ${escapeHtml(project.name)}
+        <div>
 
+          <div class="row-label">
+            NEXT COMMIT
           </div>
 
+          <div class="row-content">
 
-          <div class="commit-info">
-
-
-            <div class="info-block">
-
-              <div class="info-label">
-                NEXT COMMIT
-              </div>
-
-              <div class="info-text">
-
-                ${escapeHtml(next)}
-
-              </div>
-
-            </div>
-
-
-            <div class="info-block">
-
-              <div class="info-label">
-                LATEST COMMIT
-              </div>
-
-              ${
-                latest
-                  ? `
-                    <div class="info-text">
-
-                      ${escapeHtml(
-                        latest.text
-                      )}
-
-                    </div>
-
-                    <div class="card-bottom">
-
-                      ${escapeHtml(
-                        latest.code
-                      )}
-
-                      ·
-
-                      ${formatDate(
-                        latest.createdAt
-                      )}
-
-                    </div>
-                  `
-                  : `
-                    <div class="info-text commit-placeholder">
-                      No commits yet
-                    </div>
-                  `
-              }
-
-            </div>
-
+            ${escapeHtml(
+              nextCommit
+            )}
 
           </div>
 
@@ -478,11 +532,68 @@ function renderHome() {
 
         <div>
 
+          <div class="row-label">
+            LASTEST COMMIT
+          </div>
+
+
+          ${
+            latest
+
+              ? `
+
+                <div class="row-content">
+
+                  ${escapeHtml(
+                    latest.text
+                  )}
+
+                </div>
+
+
+                <div class="row-meta">
+
+                  <span class="commit-code">
+
+                    ${escapeHtml(
+                      latest.code
+                    )}
+
+                  </span>
+
+                  ·
+
+                  ${relativeTime(
+                    latest.createdAt
+                  )}
+
+                </div>
+
+              `
+
+              : `
+
+                <div class="row-content">
+
+                  —
+
+                </div>
+
+              `
+          }
+
+        </div>
+
+
+        <div class="row-actions">
+
           <button
-            class="text-button open-project"
+            class="plain-button open-project"
             data-id="${project.id}"
           >
-            Open →
+
+            OPEN
+
           </button>
 
 
@@ -491,11 +602,10 @@ function renderHome() {
               ? ""
               : `
                 <button
-                  class="text-button focus-project"
+                  class="plain-button focus-project"
                   data-id="${project.id}"
-                  style="margin-left:18px;"
                 >
-                  Set focus
+                  FOCUS
                 </button>
               `
           }
@@ -505,9 +615,12 @@ function renderHome() {
       `;
 
 
-      grid.appendChild(card);
+      container.appendChild(
+        row
+      );
 
     }
+
   );
 
 
@@ -524,43 +637,78 @@ function attachHomeEvents() {
 
 
   document
-    .querySelectorAll(".open-project")
-    .forEach(button => {
+    .querySelectorAll(
+      ".project-name"
+    )
+    .forEach(
+      element => {
 
-      button.addEventListener(
-        "click",
-        event => {
+        element.addEventListener(
 
-          event.stopPropagation();
+          "click",
 
-          openProject(
-            button.dataset.id
-          );
+          () => {
 
-        }
-      );
+            openProject(
+              element.dataset.id
+            );
 
-    });
+          }
+
+        );
+
+      }
+    );
 
 
   document
-    .querySelectorAll(".focus-project")
-    .forEach(button => {
+    .querySelectorAll(
+      ".open-project"
+    )
+    .forEach(
+      button => {
 
-      button.addEventListener(
-        "click",
-        event => {
+        button.addEventListener(
 
-          event.stopPropagation();
+          "click",
 
-          setFocus(
-            button.dataset.id
-          );
+          () => {
 
-        }
-      );
+            openProject(
+              button.dataset.id
+            );
 
-    });
+          }
+
+        );
+
+      }
+    );
+
+
+  document
+    .querySelectorAll(
+      ".focus-project"
+    )
+    .forEach(
+      button => {
+
+        button.addEventListener(
+
+          "click",
+
+          () => {
+
+            setFocus(
+              button.dataset.id
+            );
+
+          }
+
+        );
+
+      }
+    );
 
 }
 
@@ -571,21 +719,62 @@ function attachHomeEvents() {
 
 function setFocus(id) {
 
-  projects.forEach(project => {
+  projects.forEach(
 
-    if (!project.cancelled) {
+    project => {
 
-      project.focus =
-        project.id === id;
+      if (
+        !project.cancelled
+      ) {
+
+        project.focus =
+          (
+            project.id === id
+          );
+
+      }
 
     }
 
-  });
+  );
 
 
-  saveData();
+  save();
 
   renderHome();
+
+}
+
+
+/* =====================================================
+   OPEN PROJECT
+===================================================== */
+
+function openProject(id) {
+
+  currentProjectId =
+    id;
+
+
+  document
+    .getElementById(
+      "homeView"
+    )
+    .classList.add(
+      "hidden"
+    );
+
+
+  document
+    .getElementById(
+      "projectView"
+    )
+    .classList.remove(
+      "hidden"
+    );
+
+
+  renderProject();
 
 }
 
@@ -594,30 +783,12 @@ function setFocus(id) {
    PROJECT PAGE
 ===================================================== */
 
-function openProject(id) {
-
-  currentProjectId = id;
-
-
-  document
-    .getElementById("homeView")
-    .classList.add("hidden");
-
-
-  document
-    .getElementById("projectView")
-    .classList.remove("hidden");
-
-
-  renderProject();
-
-}
-
-
 function renderProject() {
 
   const project =
-    getProject(currentProjectId);
+    getProject(
+      currentProjectId
+    );
 
 
   if (!project) {
@@ -630,42 +801,52 @@ function renderProject() {
 
 
   document
-    .getElementById("projectTitle")
+    .getElementById(
+      "projectTitle"
+    )
     .textContent =
-    project.name;
+      project.name;
 
 
-  renderNextSteps(project);
+  renderNext(
+    project
+  );
 
-  renderHistory(project);
+
+  renderHistory(
+    project
+  );
 
 }
 
 
 /* =====================================================
-   NEXT STEPS
+   NEXT
 ===================================================== */
 
-function renderNextSteps(project) {
+function renderNext(project) {
 
   const container =
     document.getElementById(
-      "nextSteps"
+      "nextCommitList"
     );
 
 
   container.innerHTML = "";
 
 
-  project.nextSteps.forEach(
-    (step, index) => {
+  project.next.forEach(
+
+    (item, index) => {
 
       const row =
-        document.createElement("div");
+        document.createElement(
+          "div"
+        );
 
 
       row.className =
-        "next-step";
+        "next-item";
 
 
       row.innerHTML = `
@@ -679,19 +860,20 @@ function renderNextSteps(project) {
 
         <div class="next-text">
 
-          ${escapeHtml(step.text)}
+          ${escapeHtml(
+            item.text
+          )}
 
         </div>
 
 
-        <div class="step-actions">
-
+        <div class="next-actions">
 
           ${
             index > 0
               ? `
                 <button
-                  class="move-step-up"
+                  class="move-up"
                   data-index="${index}"
                 >
                   ↑
@@ -703,10 +885,10 @@ function renderNextSteps(project) {
 
           ${
             index <
-            project.nextSteps.length - 1
+            project.next.length - 1
               ? `
                 <button
-                  class="move-step-down"
+                  class="move-down"
                   data-index="${index}"
                 >
                   ↓
@@ -717,108 +899,137 @@ function renderNextSteps(project) {
 
 
           <button
-            class="delete-step"
-            data-id="${step.id}"
+            class="delete-next"
+            data-id="${item.id}"
           >
             ×
           </button>
-
 
         </div>
 
       `;
 
 
-      container.appendChild(row);
+      container.appendChild(
+        row
+      );
 
     }
+
   );
 
 
-  attachStepEvents();
+  document
+    .querySelectorAll(
+      ".move-up"
+    )
+    .forEach(
+
+      button => {
+
+        button.addEventListener(
+
+          "click",
+
+          () => {
+
+            moveNext(
+
+              Number(
+                button.dataset.index
+              ),
+
+              -1
+
+            );
+
+          }
+
+        );
+
+      }
+
+    );
+
+
+  document
+    .querySelectorAll(
+      ".move-down"
+    )
+    .forEach(
+
+      button => {
+
+        button.addEventListener(
+
+          "click",
+
+          () => {
+
+            moveNext(
+
+              Number(
+                button.dataset.index
+              ),
+
+              1
+
+            );
+
+          }
+
+        );
+
+      }
+
+    );
+
+
+  document
+    .querySelectorAll(
+      ".delete-next"
+    )
+    .forEach(
+
+      button => {
+
+        button.addEventListener(
+
+          "click",
+
+          () => {
+
+            deleteNext(
+              button.dataset.id
+            );
+
+          }
+
+        );
+
+      }
+
+    );
 
 }
 
 
-function attachStepEvents() {
-
-
-  document
-    .querySelectorAll(".move-step-up")
-    .forEach(button => {
-
-      button.addEventListener(
-        "click",
-        () => {
-
-          moveStep(
-            Number(button.dataset.index),
-            -1
-          );
-
-        }
-      );
-
-    });
-
-
-  document
-    .querySelectorAll(".move-step-down")
-    .forEach(button => {
-
-      button.addEventListener(
-        "click",
-        () => {
-
-          moveStep(
-            Number(button.dataset.index),
-            1
-          );
-
-        }
-      );
-
-    });
-
-
-  document
-    .querySelectorAll(".delete-step")
-    .forEach(button => {
-
-      button.addEventListener(
-        "click",
-        () => {
-
-          deleteStep(
-            button.dataset.id
-          );
-
-        }
-      );
-
-    });
-
-}
-
-
-/* =====================================================
-   MOVE / DELETE
-===================================================== */
-
-function moveStep(index, direction) {
+function moveNext(index, direction) {
 
   const project =
-    getProject(currentProjectId);
+    getProject(
+      currentProjectId
+    );
 
 
-  const newIndex =
+  const target =
     index + direction;
 
 
   if (
-    newIndex < 0 ||
-    newIndex >=
-      project.nextSteps.length
+    target < 0 ||
+    target >=
+      project.next.length
   ) {
 
     return;
@@ -827,37 +1038,42 @@ function moveStep(index, direction) {
 
 
   const temp =
-    project.nextSteps[index];
+    project.next[index];
 
 
-  project.nextSteps[index] =
-    project.nextSteps[newIndex];
+  project.next[index] =
+    project.next[target];
 
 
-  project.nextSteps[newIndex] =
+  project.next[target] =
     temp;
 
 
-  saveData();
+  save();
 
   renderProject();
 
 }
 
 
-function deleteStep(id) {
+function deleteNext(id) {
 
   const project =
-    getProject(currentProjectId);
-
-
-  project.nextSteps =
-    project.nextSteps.filter(
-      step => step.id !== id
+    getProject(
+      currentProjectId
     );
 
 
-  saveData();
+  project.next =
+    project.next.filter(
+
+      item =>
+        item.id !== id
+
+    );
+
+
+  save();
 
   renderProject();
 
@@ -865,25 +1081,31 @@ function deleteStep(id) {
 
 
 /* =====================================================
-   ADD NEXT STEP
+   ADD NEXT
 ===================================================== */
 
 document
-  .getElementById("addStepBtn")
+  .getElementById(
+    "addNextButton"
+  )
   .addEventListener(
+
     "click",
+
     () => {
 
       const project =
-        getProject(currentProjectId);
+        getProject(
+          currentProjectId
+        );
 
 
       if (
-        project.nextSteps.length >= 3
+        project.next.length >= 3
       ) {
 
         alert(
-          "Keep it to 3 next commits."
+          "Maximum 3 next commits."
         );
 
         return;
@@ -893,7 +1115,7 @@ document
 
       const text =
         prompt(
-          "What's next?"
+          "next commit"
         );
 
 
@@ -904,7 +1126,7 @@ document
       }
 
 
-      project.nextSteps.push({
+      project.next.push({
 
         id:
           crypto.randomUUID(),
@@ -915,11 +1137,12 @@ document
       });
 
 
-      saveData();
+      save();
 
       renderProject();
 
     }
+
   );
 
 
@@ -931,7 +1154,7 @@ function renderHistory(project) {
 
   const container =
     document.getElementById(
-      "commitHistory"
+      "historyList"
     );
 
 
@@ -939,74 +1162,83 @@ function renderHistory(project) {
 
 
   const commits =
-    [...project.commits]
-      .reverse();
+    [...project.commits].reverse();
 
 
   if (!commits.length) {
 
-    container.innerHTML =
-      `
-        <div
-          class="commit-placeholder"
-        >
-          No commits yet.
-        </div>
-      `;
+    container.innerHTML = `
+
+      <div
+        class="history-item"
+        style="color:#888;"
+      >
+        NO COMMITS YET.
+      </div>
+
+    `;
 
     return;
 
   }
 
 
-  commits.forEach(commit => {
+  commits.forEach(
 
-    const row =
-      document.createElement("div");
+    commit => {
 
-
-    row.className =
-      "commit";
-
-
-    row.innerHTML = `
-
-      <div class="commit-main">
-
-        ${escapeHtml(
-          commit.text
-        )}
-
-      </div>
+      const item =
+        document.createElement(
+          "div"
+        );
 
 
-      <div class="commit-meta">
+      item.className =
+        "history-item";
 
-        <span class="commit-code">
+
+      item.innerHTML = `
+
+        <div class="history-text">
 
           ${escapeHtml(
-            commit.code
+            commit.text
           )}
 
-        </span>
+        </div>
 
 
-        <span>
+        <div class="history-meta">
 
-          ${formatDate(
-            commit.createdAt
-          )}
+          <span class="commit-code">
 
-        </span>
+            ${escapeHtml(
+              commit.code
+            )}
 
-      </div>
-
-    `;
+          </span>
 
 
-    container.appendChild(row);
+          <span>
 
-  });
+            ${relativeTime(
+              commit.createdAt
+            )}
+
+          </span>
+
+        </div>
+
+      `;
+
+
+      container.appendChild(
+        item
+      );
+
+    }
+
+  );
 
 }
 
@@ -1016,53 +1248,69 @@ function renderHistory(project) {
 ===================================================== */
 
 document
-  .getElementById("commitBtn")
+  .getElementById(
+    "commitButton"
+  )
   .addEventListener(
+
     "click",
+
     () => {
 
       const project =
-        getProject(currentProjectId);
+        getProject(
+          currentProjectId
+        );
 
 
       document
-        .getElementById("commitInput")
+        .getElementById(
+          "commitInput"
+        )
         .value = "";
 
 
-      renderCommitSteps(
+      renderCommitNext(
         project
       );
 
 
       document
-        .getElementById("commitModal")
-        .classList.remove("hidden");
+        .getElementById(
+          "commitModal"
+        )
+        .classList.remove(
+          "hidden"
+        );
 
     }
+
   );
 
 
-function renderCommitSteps(project) {
+function renderCommitNext(project) {
 
   const container =
     document.getElementById(
-      "commitNextSteps"
+      "commitNextList"
     );
 
 
   container.innerHTML = "";
 
 
-  project.nextSteps.forEach(
-    (step, index) => {
+  project.next.forEach(
+
+    (item, index) => {
 
       const row =
-        document.createElement("div");
+        document.createElement(
+          "div"
+        );
 
 
       row.className =
-        "next-step";
+        "next-item";
 
 
       row.innerHTML = `
@@ -1077,7 +1325,7 @@ function renderCommitSteps(project) {
         <div class="next-text">
 
           ${escapeHtml(
-            step.text
+            item.text
           )}
 
         </div>
@@ -1085,34 +1333,43 @@ function renderCommitSteps(project) {
       `;
 
 
-      container.appendChild(row);
+      container.appendChild(
+        row
+      );
 
     }
+
   );
 
 }
 
 
 /* =====================================================
-   ADD NEXT STEP FROM COMMIT
+   ADD NEXT FROM COMMIT
 ===================================================== */
 
 document
-  .getElementById("addCommitStepBtn")
+  .getElementById(
+    "addCommitNextButton"
+  )
   .addEventListener(
+
     "click",
+
     () => {
 
       const project =
-        getProject(currentProjectId);
+        getProject(
+          currentProjectId
+        );
 
 
       if (
-        project.nextSteps.length >= 3
+        project.next.length >= 3
       ) {
 
         alert(
-          "Keep it to 3 next commits."
+          "Maximum 3 next commits."
         );
 
         return;
@@ -1122,7 +1379,7 @@ document
 
       const text =
         prompt(
-          "What's next?"
+          "next commit"
         );
 
 
@@ -1133,7 +1390,7 @@ document
       }
 
 
-      project.nextSteps.push({
+      project.next.push({
 
         id:
           crypto.randomUUID(),
@@ -1144,13 +1401,14 @@ document
       });
 
 
-      saveData();
+      save();
 
-      renderCommitSteps(
+      renderCommitNext(
         project
       );
 
     }
+
   );
 
 
@@ -1159,36 +1417,43 @@ document
 ===================================================== */
 
 document
-  .getElementById("saveCommitBtn")
+  .getElementById(
+    "saveCommitButton"
+  )
   .addEventListener(
+
     "click",
+
     () => {
 
       const project =
-        getProject(currentProjectId);
+        getProject(
+          currentProjectId
+        );
+
+
+      const input =
+        document.getElementById(
+          "commitInput"
+        );
 
 
       const text =
-        document
-          .getElementById(
-            "commitInput"
-          )
-          .value
-          .trim();
+        input.value.trim();
 
 
       if (!text) {
-
-        alert(
-          "Write something first."
-        );
 
         return;
 
       }
 
 
-      project.commits.push({
+      /*
+        Create ONE permanent commit code.
+      */
+
+      const commit = {
 
         id:
           crypto.randomUUID(),
@@ -1202,56 +1467,71 @@ document
         createdAt:
           new Date().toISOString()
 
-      });
+      };
+
+
+      project.commits.push(
+        commit
+      );
 
 
       /*
-        The first next commit
-        becomes the thing you just pushed.
+        First NEXT COMMIT becomes
+        the thing that was just pushed.
       */
 
       if (
-        project.nextSteps.length
+        project.next.length
       ) {
 
-        project.nextSteps.shift();
+        project.next.shift();
 
       }
 
 
-      saveData();
+      save();
 
 
       document
         .getElementById(
           "commitModal"
         )
-        .classList.add("hidden");
+        .classList.add(
+          "hidden"
+        );
 
 
       renderProject();
 
     }
+
   );
 
 
 /* =====================================================
-   CANCEL COMMIT MODAL
+   CLOSE COMMIT
 ===================================================== */
 
 document
-  .getElementById("cancelCommitBtn")
+  .getElementById(
+    "closeCommitModal"
+  )
   .addEventListener(
+
     "click",
+
     () => {
 
       document
         .getElementById(
           "commitModal"
         )
-        .classList.add("hidden");
+        .classList.add(
+          "hidden"
+        );
 
     }
+
   );
 
 
@@ -1260,9 +1540,13 @@ document
 ===================================================== */
 
 document
-  .getElementById("addProjectBtn")
+  .getElementById(
+    "newProjectBtn"
+  )
   .addEventListener(
+
     "click",
+
     () => {
 
       document
@@ -1276,46 +1560,71 @@ document
         .getElementById(
           "projectModal"
         )
-        .classList.remove("hidden");
+        .classList.remove(
+          "hidden"
+        );
 
-      setTimeout(() => {
 
-        document
-          .getElementById(
-            "projectNameInput"
-          )
-          .focus();
+      setTimeout(
 
-      }, 50);
+        () => {
+
+          document
+            .getElementById(
+              "projectNameInput"
+            )
+            .focus();
+
+        },
+
+        50
+
+      );
 
     }
+
   );
 
 
+/* =====================================================
+   CLOSE PROJECT MODAL
+===================================================== */
+
 document
   .getElementById(
-    "cancelProjectModalBtn"
+    "closeProjectModal"
   )
   .addEventListener(
+
     "click",
+
     () => {
 
       document
         .getElementById(
           "projectModal"
         )
-        .classList.add("hidden");
+        .classList.add(
+          "hidden"
+        );
 
     }
+
   );
 
 
+/* =====================================================
+   CREATE PROJECT
+===================================================== */
+
 document
   .getElementById(
-    "saveProjectBtn"
+    "createProjectButton"
   )
   .addEventListener(
+
     "click",
+
     () => {
 
       const name =
@@ -1334,11 +1643,26 @@ document
       }
 
 
-      projects.forEach(project => {
+      /*
+        New project becomes focus.
+      */
 
-        project.focus = false;
+      projects.forEach(
 
-      });
+        project => {
+
+          if (
+            !project.cancelled
+          ) {
+
+            project.focus =
+              false;
+
+          }
+
+        }
+
+      );
 
 
       projects.push({
@@ -1355,7 +1679,7 @@ document
         cancelled:
           false,
 
-        nextSteps:
+        next:
           [],
 
         commits:
@@ -1364,19 +1688,22 @@ document
       });
 
 
-      saveData();
+      save();
 
 
       document
         .getElementById(
           "projectModal"
         )
-        .classList.add("hidden");
+        .classList.add(
+          "hidden"
+        );
 
 
       renderHome();
 
     }
+
   );
 
 
@@ -1386,14 +1713,18 @@ document
 
 document
   .getElementById(
-    "cancelProjectBtn"
+    "cancelProjectButton"
   )
   .addEventListener(
+
     "click",
+
     () => {
 
       const project =
-        getProject(currentProjectId);
+        getProject(
+          currentProjectId
+        );
 
 
       if (!project) {
@@ -1403,50 +1734,61 @@ document
       }
 
 
-      const confirmed =
-        confirm(
-          `Cancel "${project.name}"?`
+      const confirmCancel =
+        window.confirm(
+
+          `Cancel project "${project.name}"?`
+
         );
 
 
-      if (!confirmed) {
+      if (!confirmCancel) {
 
         return;
 
       }
 
 
-      project.cancelled = true;
+      /*
+        Don't delete.
+        Just archive it as cancelled.
+      */
 
-      project.focus = false;
+      project.cancelled =
+        true;
+
+      project.focus =
+        false;
 
 
       /*
-        Keep the project in localStorage.
-        We are hiding it from active projects,
-        not deleting its history.
+        Give focus to the first
+        remaining active project.
       */
 
-
       const remaining =
-        getActiveProjects();
+        activeProjects();
 
 
       if (remaining.length) {
 
-        remaining[0].focus = true;
+        remaining[0].focus =
+          true;
 
       }
 
 
-      saveData();
+      save();
 
 
-      currentProjectId = null;
+      currentProjectId =
+        null;
+
 
       renderHome();
 
     }
+
   );
 
 
@@ -1455,16 +1797,80 @@ document
 ===================================================== */
 
 document
-  .getElementById("backBtn")
+  .getElementById(
+    "backButton"
+  )
   .addEventListener(
+
     "click",
+
     () => {
 
-      currentProjectId = null;
+      currentProjectId =
+        null;
 
       renderHome();
 
     }
+
+  );
+
+
+/* =====================================================
+   CLOSE MODALS BY CLICKING OUTSIDE
+===================================================== */
+
+document
+  .getElementById(
+    "projectModal"
+  )
+  .addEventListener(
+
+    "click",
+
+    event => {
+
+      if (
+        event.target.id ===
+        "projectModal"
+      ) {
+
+        event.currentTarget
+          .classList.add(
+            "hidden"
+          );
+
+      }
+
+    }
+
+  );
+
+
+document
+  .getElementById(
+    "commitModal"
+  )
+  .addEventListener(
+
+    "click",
+
+    event => {
+
+      if (
+        event.target.id ===
+        "commitModal"
+      ) {
+
+        event.currentTarget
+          .classList.add(
+            "hidden"
+          );
+
+      }
+
+    }
+
   );
 
 
