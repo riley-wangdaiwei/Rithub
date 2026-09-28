@@ -1060,6 +1060,7 @@ function commitNextItem(id) {
 
   save();
   renderProject();
+  promptForNextCommit(project);
 }
 
 
@@ -1133,6 +1134,20 @@ function deleteNext(id) {
    ADD NEXT
 ===================================================== */
 
+function promptForNextCommit(project) {
+  const text = prompt("next commit");
+
+  if (!text || !text.trim()) return;
+
+  project.next.push({
+    id: crypto.randomUUID(),
+    text: text.trim()
+  });
+
+  save();
+  renderProject();
+}
+
 document
   .getElementById(
     "addNextButton"
@@ -1147,19 +1162,6 @@ document
         getProject(
           currentProjectId
         );
-
-
-      if (
-        project.next.length >= 3
-      ) {
-
-        alert(
-          "Maximum 3 next commits."
-        );
-
-        return;
-
-      }
 
 
       const text =
@@ -1454,19 +1456,6 @@ document
         );
 
 
-      if (
-        project.next.length >= 3
-      ) {
-
-        alert(
-          "Maximum 3 next commits."
-        );
-
-        return;
-
-      }
-
-
       const text =
         prompt(
           "next commit"
@@ -1578,6 +1567,7 @@ document
 
 
       renderProject();
+      promptForNextCommit(project);
 
     }
 
