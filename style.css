@@ -743,3 +743,57 @@ textarea:focus {
   }
 
 }
+
+/* ==================================================
+   NEXT ITEM: COMMIT CHECKMARK
+================================================== */
+
+.next-actions .commit-next-item {
+  color: #9b0000;
+  font-size: 15px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.next-actions .commit-next-item:hover {
+  color: #151515;
+}
+
+
+/* ==================================================
+   HISTORY: DELETE BUTTON
+================================================== */
+
+.history-item {
+  position: relative;
+}
+
+.history-delete {
+  border: none;
+  background: transparent;
+  padding: 0;
+
+  font-family: inherit;
+  font-size: 15px;
+  color: #999;
+
+  cursor: pointer;
+}
+
+.history-delete:hover {
+  color: #9b0000;
+}
+
+.history-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 20px;
+}
+
+.history-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}

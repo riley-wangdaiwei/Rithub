@@ -533,7 +533,7 @@ function renderHome() {
         <div>
 
           <div class="row-label">
-            LASTEST COMMIT
+            LATEST COMMIT
           </div>
 
 
@@ -899,6 +899,14 @@ function renderNext(project) {
 
 
           <button
+            class="commit-next-item"
+            data-id="${item.id}"
+            title="Commit this item"
+          >
+            ✓
+          </button>
+
+          <button
             class="delete-next"
             data-id="${item.id}"
           >
@@ -1011,6 +1019,47 @@ function renderNext(project) {
 
     );
 
+
+  document
+    .querySelectorAll(".commit-next-item")
+    .forEach(button => {
+      button.addEventListener("click", () => {
+        commitNextItem(button.dataset.id);
+      });
+    });
+
+}
+
+
+/* =====================================================
+   COMMIT ONE NEXT ITEM
+===================================================== */
+
+function commitNextItem(id) {
+  const project = getProject(currentProjectId);
+
+  if (!project) return;
+
+  const index = project.next.findIndex(
+    item => item.id === id
+  );
+
+  if (index === -1) return;
+
+  const item = project.next[index];
+
+  project.commits.push({
+    id: crypto.randomUUID(),
+    text: item.text,
+    code: generateCommitCode(),
+    createdAt: new Date().toISOString()
+  });
+
+  // Remove only the selected item.
+  project.next.splice(index, 1);
+
+  save();
+  renderProject();
 }
 
 
@@ -1229,6 +1278,14 @@ function renderHistory(project) {
 
         </div>
 
+        <button
+          class="history-delete"
+          data-id="${commit.id}"
+          title="Delete this history"
+        >
+          ×
+        </button>
+
       `;
 
 
@@ -1240,6 +1297,39 @@ function renderHistory(project) {
 
   );
 
+
+  document
+    .querySelectorAll(".history-delete")
+    .forEach(button => {
+      button.addEventListener("click", () => {
+        deleteHistoryCommit(button.dataset.id);
+      });
+    });
+
+}
+
+
+/* =====================================================
+   DELETE HISTORY COMMIT
+===================================================== */
+
+function deleteHistoryCommit(id) {
+  const project = getProject(currentProjectId);
+
+  if (!project) return;
+
+  const confirmed = confirm(
+    "Delete this history record?"
+  );
+
+  if (!confirmed) return;
+
+  project.commits = project.commits.filter(
+    commit => commit.id !== id
+  );
+
+  save();
+  renderProject();
 }
 
 
@@ -1473,20 +1563,6 @@ document
       project.commits.push(
         commit
       );
-
-
-      /*
-        First NEXT COMMIT becomes
-        the thing that was just pushed.
-      */
-
-      if (
-        project.next.length
-      ) {
-
-        project.next.shift();
-
-      }
 
 
       save();
