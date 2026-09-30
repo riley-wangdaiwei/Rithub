@@ -5,15 +5,20 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Rithub</title>
-  <link rel="stylesheet" href="style.css?v=3" />
+  <link rel="stylesheet" href="style.css?v=4" />
 </head>
 
 <body>
   <header class="topbar">
     <div></div>
-    <button id="newProjectBtn" class="new-project-button">
-      + Rithub it
-    </button>
+    <div class="topbar-actions">
+      <button id="syncButton" class="new-project-button">
+        SYNC
+      </button>
+      <button id="newProjectBtn" class="new-project-button">
+        + Rithub it
+      </button>
+    </div>
   </header>
 
   <main>
@@ -84,10 +89,30 @@
     </div>
   </div>
 
+  <div id="syncModal" class="modal hidden">
+    <div class="modal-inner">
+      <div class="modal-heading">CLOUD SYNC</div>
+
+      <div id="syncStatus" class="sync-status">not configured</div>
+
+      <input id="syncTokenInput" type="password" placeholder="github token (gist scope)" autocomplete="off" />
+
+      <input id="syncGistInput" type="text" placeholder="gist id — only for the 2nd device" autocomplete="off" />
+      <div class="sync-hint">First device: leave the gist id empty and a private gist is created for you. Other devices: paste the same token + the gist id shown here after enabling.</div>
+
+      <div class="modal-actions">
+        <button id="closeSyncModal" class="plain-button">CLOSE</button>
+        <button id="disableSyncButton" class="plain-button hidden">DISCONNECT</button>
+        <button id="syncNowButton" class="plain-button hidden">SYNC NOW</button>
+        <button id="enableSyncButton" class="commit-button">ENABLE</button>
+      </div>
+    </div>
+  </div>
+
   <footer class="footer">
     ALL WORK AND NO PLAY MAKES ME A LLUD GIRL
   </footer>
 
-  <script src="app.js?v=3"></script>
+  <script src="app.js?v=4"></script>
 </body>
 </html>

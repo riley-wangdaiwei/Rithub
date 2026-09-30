@@ -81,21 +81,17 @@ function generateCommitCode() {
    DATA
 ===================================================== */
 
-let projects =
-  JSON.parse(
-    localStorage.getItem(
-      STORAGE_KEY
-    )
-  );
+let projects = [];
+let localUpdatedAt = null;
 
 
 /*
-   First launch
+   The defaults for a first launch.
 */
 
-if (!projects) {
+function seedProjects() {
 
-  projects = [
+  return [
 
     {
       id:
@@ -230,9 +226,66 @@ if (!projects) {
 
     }
 
-  ];
+  ];;
 
-  save();
+}
+
+
+/*
+   Load from this browser. Migrates the old
+   shape (a bare array) into the envelope
+   { updatedAt, projects }.
+*/
+
+function loadLocal() {
+
+  let raw = null;
+
+
+  try {
+
+    raw =
+      JSON.parse(
+        localStorage.getItem(
+          STORAGE_KEY
+        )
+      );
+
+  } catch (e) {
+
+    raw = null;
+
+  }
+
+
+  if (Array.isArray(raw)) {
+
+    projects = raw;
+
+  } else if (
+    raw &&
+    Array.isArray(raw.projects)
+  ) {
+
+    projects = raw.projects;
+    localUpdatedAt = raw.updatedAt || null;
+
+  } else {
+
+    projects = seedProjects();
+
+  }
+
+
+  if (!localUpdatedAt) {
+
+    localUpdatedAt =
+      new Date().toISOString();
+
+  }
+
+
+  saveLocal();
 
 }
 
@@ -246,16 +299,791 @@ let currentProjectId =
 
 
 /* =====================================================
-   STORAGE
+   STORAGE (local)
 ===================================================== */
 
-function save() {
+function saveLocal() {
 
   localStorage.setItem(
 
     STORAGE_KEY,
 
-    JSON.stringify(projects)
+    JSON.stringify({
+
+      updatedAt: localUpdatedAt,
+
+      projects: projects
+
+    })
+
+  );
+
+}
+
+
+function save() {
+
+  localUpdatedAt =
+    new Date().toISOString();
+
+  saveLocal();
+
+  schedulePush();
+
+}
+
+
+/* =====================================================
+   CLOUD SYNC (GitHub Gist)
+   The token + gist id live only on this device
+   (localStorage) and are never synced.
+===================================================== */
+
+const SYNC_CONFIG_KEY = "rithub-cloud";
+const SYNC_META_KEY = "rithub-cloud-meta";
+const GIST_FILE = "rithub.json";
+
+let pushTimer = null;
+
+
+function cloudConfig() {
+
+  try {
+
+    return JSON.parse(
+      localStorage.getItem(
+        SYNC_CONFIG_KEY
+      )
+    );
+
+  } catch (e) {
+
+    return null;
+
+  }
+
+}
+
+
+function syncMeta() {
+
+  try {
+
+    return (
+      JSON.parse(
+        localStorage.getItem(
+          SYNC_META_KEY
+        )
+      ) || {}
+    );
+
+  } catch (e) {
+
+    return {};
+
+  }
+
+}
+
+
+function setSyncMeta(patch) {
+
+  const meta = syncMeta();
+
+  Object.keys(patch).forEach(key => {
+
+    meta[key] = patch[key];
+
+  });
+
+  localStorage.setItem(
+    SYNC_META_KEY,
+    JSON.stringify(meta)
+  );
+
+}
+
+
+async function ghApi(path, token, options) {
+
+  options = options || {};
+
+  const res =
+    await fetch(
+      "https://api.github.com" + path,
+      {
+        method: options.method || "GET",
+        headers: {
+          "Authorization": "Bearer " + token,
+          "Accept": "application/vnd.github+json",
+          "Content-Type": "application/json"
+        },
+        body:
+          options.body
+            ? JSON.stringify(options.body)
+            : undefined
+      }
+    );
+
+
+  if (!res.ok) {
+
+    let detail = "";
+
+    try {
+
+      const err = await res.json();
+      detail = err.message ? " — " + err.message : "";
+
+    } catch (e) {}
+
+
+    throw new Error(
+      "GitHub " + res.status + detail
+    );
+
+  }
+
+
+  if (res.status === 204) return null;
+
+  return res.json();
+
+}
+
+
+function envelope() {
+
+  return {
+
+    updatedAt: localUpdatedAt,
+
+    projects: projects
+
+  };
+
+}
+
+
+async function fetchRemoteEnvelope(cfg) {
+
+  const gist =
+    await ghApi(
+      "/gists/" + cfg.gistId,
+      cfg.token
+    );
+
+  const file =
+    gist.files &&
+    gist.files[GIST_FILE];
+
+
+  if (
+    !file ||
+    !file.content
+  ) {
+
+    return null;
+
+  }
+
+
+  try {
+
+    const data =
+      JSON.parse(file.content);
+
+
+    if (
+      data &&
+      Array.isArray(data.projects)
+    ) {
+
+      return data;
+
+    }
+
+  } catch (e) {}
+
+
+  return null;
+
+}
+
+
+function adoptRemote(remote) {
+
+  projects = remote.projects;
+  localUpdatedAt = remote.updatedAt;
+
+  saveLocal();
+
+  setSyncMeta({
+    lastSyncAt: remote.updatedAt
+  });
+
+  renderCurrent();
+
+}
+
+
+async function pushEnvelope(cfg) {
+
+  const meta = syncMeta();
+
+  const remote =
+    await fetchRemoteEnvelope(cfg);
+
+
+  /*
+     Guarded push: if the cloud copy moved on
+     from another device since we last synced,
+     take it instead of overwriting it.
+  */
+
+  if (
+    remote &&
+    remote.updatedAt &&
+    localUpdatedAt &&
+    remote.updatedAt > localUpdatedAt &&
+    (
+      !meta.lastSyncAt ||
+      remote.updatedAt > meta.lastSyncAt
+    )
+  ) {
+
+    adoptRemote(remote);
+
+    return "pulled";
+
+  }
+
+
+  await ghApi(
+    "/gists/" + cfg.gistId,
+    cfg.token,
+    {
+      method: "PATCH",
+      body: {
+        files: {
+          [GIST_FILE]: {
+            content:
+              JSON.stringify(
+                envelope()
+              )
+          }
+        }
+      }
+    }
+  );
+
+
+  setSyncMeta({
+    lastSyncAt: localUpdatedAt
+  });
+
+  return "pushed";
+
+}
+
+
+async function syncNow() {
+
+  const cfg = cloudConfig();
+
+
+  if (!cfg) {
+
+    throw new Error(
+      "sync not configured"
+    );
+
+  }
+
+
+  const remote =
+    await fetchRemoteEnvelope(cfg);
+
+
+  if (!remote) {
+
+    /*
+       Empty cloud: this device wins.
+    */
+
+    await pushEnvelope(cfg);
+
+    return "pushed";
+
+  }
+
+
+  if (
+    remote.updatedAt &&
+    (
+      !localUpdatedAt ||
+      remote.updatedAt > localUpdatedAt
+    )
+  ) {
+
+    adoptRemote(remote);
+
+    return "pulled";
+
+  }
+
+
+  if (
+    localUpdatedAt &&
+    remote.updatedAt &&
+    localUpdatedAt > remote.updatedAt
+  ) {
+
+    await pushEnvelope(cfg);
+
+    return "pushed";
+
+  }
+
+
+  return "up to date";
+
+}
+
+
+function schedulePush() {
+
+  if (!cloudConfig()) return;
+
+  clearTimeout(pushTimer);
+
+  setSyncStatus("syncing…");
+
+  pushTimer = setTimeout(
+
+    async () => {
+
+      try {
+
+        const result =
+          await pushEnvelope(
+            cloudConfig()
+          );
+
+
+        setSyncStatus(
+          result === "pulled"
+            ? "pulled newer cloud copy"
+            : "synced " +
+              relativeTime(
+                new Date().toISOString()
+              )
+        );
+
+      } catch (e) {
+
+        setSyncStatus(
+          "sync failed: " + e.message
+        );
+
+      }
+
+    },
+
+    2000
+
+  );
+
+}
+
+
+/* =====================================================
+   SYNC UI
+===================================================== */
+
+function setSyncStatus(text) {
+
+  const el =
+    document.getElementById(
+      "syncStatus"
+    );
+
+
+  if (el) {
+
+    el.textContent = text;
+
+  }
+
+}
+
+
+function renderCurrent() {
+
+  if (
+    currentProjectId &&
+    getProject(currentProjectId)
+  ) {
+
+    renderProject();
+
+  } else {
+
+    currentProjectId = null;
+
+    renderHome();
+
+  }
+
+}
+
+
+function refreshSyncModal(preserveStatus) {
+
+  const cfg = cloudConfig();
+  const meta = syncMeta();
+
+
+  document.getElementById(
+    "syncTokenInput"
+  ).value = cfg ? cfg.token : "";
+
+  document.getElementById(
+    "syncGistInput"
+  ).value = cfg ? cfg.gistId : "";
+
+
+  document
+    .getElementById(
+      "disableSyncButton"
+    )
+    .classList.toggle(
+      "hidden",
+      !cfg
+    );
+
+  document
+    .getElementById(
+      "syncNowButton"
+    )
+    .classList.toggle(
+      "hidden",
+      !cfg
+    );
+
+  document.getElementById(
+    "enableSyncButton"
+  ).textContent = cfg ? "RECONNECT" : "ENABLE";
+
+
+  if (preserveStatus) return;
+
+
+  if (!cfg) {
+
+    setSyncStatus("not configured");
+
+  } else if (meta.lastSyncAt) {
+
+    setSyncStatus(
+      "synced " +
+        relativeTime(meta.lastSyncAt)
+    );
+
+  } else {
+
+    setSyncStatus(
+      "configured — not synced yet"
+    );
+
+  }
+
+}
+
+
+function wireSyncUI() {
+
+  document
+    .getElementById("syncButton")
+    .addEventListener(
+
+      "click",
+
+      () => {
+
+        refreshSyncModal(false);
+
+        document
+          .getElementById("syncModal")
+          .classList.remove("hidden");
+
+      }
+
+    );
+
+
+  document
+    .getElementById("closeSyncModal")
+    .addEventListener(
+
+      "click",
+
+      () => {
+
+        document
+          .getElementById("syncModal")
+          .classList.add("hidden");
+
+      }
+
+    );
+
+
+  document
+    .getElementById("syncModal")
+    .addEventListener(
+
+      "click",
+
+      event => {
+
+        if (
+          event.target.id === "syncModal"
+        ) {
+
+          event.currentTarget.classList.add(
+            "hidden"
+          );
+
+        }
+
+      }
+
+    );
+
+
+  document
+    .getElementById("enableSyncButton")
+    .addEventListener(
+
+      "click",
+
+      async () => {
+
+        const token =
+          document
+            .getElementById(
+              "syncTokenInput"
+            )
+            .value.trim();
+
+        const gistId =
+          document
+            .getElementById(
+              "syncGistInput"
+            )
+            .value.trim();
+
+
+        if (!token) {
+
+          setSyncStatus(
+            "paste a github token first"
+          );
+
+          return;
+
+        }
+
+
+        setSyncStatus("connecting…");
+
+
+        try {
+
+          let id = gistId;
+
+
+          if (!id) {
+
+            /*
+               First device: create the private
+               gist from this device's data.
+            */
+
+            const gist = await ghApi(
+              "/gists",
+              token,
+              {
+                method: "POST",
+                body: {
+                  description: "Rithub data",
+                  public: false,
+                  files: {
+                    [GIST_FILE]: {
+                      content:
+                        JSON.stringify(
+                          envelope()
+                        )
+                    }
+                  }
+                }
+              }
+            );
+
+            id = gist.id;
+
+          }
+
+
+          const cfg = {
+            gistId: id,
+            token: token
+          };
+
+          localStorage.setItem(
+            SYNC_CONFIG_KEY,
+            JSON.stringify(cfg)
+          );
+
+
+          if (gistId) {
+
+            /*
+               Joining an existing cloud:
+               the cloud copy wins.
+            */
+
+            const remote =
+              await fetchRemoteEnvelope(cfg);
+
+
+            if (remote) {
+
+              adoptRemote(remote);
+
+              setSyncStatus(
+                "connected — pulled cloud copy"
+              );
+
+            } else {
+
+              await pushEnvelope(cfg);
+
+              setSyncStatus(
+                "connected — pushed this device"
+              );
+
+            }
+
+          } else {
+
+            setSyncMeta({
+              lastSyncAt: localUpdatedAt
+            });
+
+            setSyncStatus(
+              "connected — synced"
+            );
+
+          }
+
+        } catch (e) {
+
+          setSyncStatus(
+            "failed: " + e.message
+          );
+
+        }
+
+
+        refreshSyncModal(true);
+
+      }
+
+    );
+
+
+  document
+    .getElementById("syncNowButton")
+    .addEventListener(
+
+      "click",
+
+      async () => {
+
+        setSyncStatus("syncing…");
+
+
+        try {
+
+          const result = await syncNow();
+
+          setSyncStatus(
+            result === "up to date"
+              ? "already up to date"
+              : result === "pulled"
+                ? "pulled cloud copy"
+                : "pushed to cloud"
+          );
+
+        } catch (e) {
+
+          setSyncStatus(
+            "failed: " + e.message
+          );
+
+        }
+
+      }
+
+    );
+
+
+  document
+    .getElementById("disableSyncButton")
+    .addEventListener(
+
+      "click",
+
+      () => {
+
+        localStorage.removeItem(
+          SYNC_CONFIG_KEY
+        );
+
+        localStorage.removeItem(
+          SYNC_META_KEY
+        );
+
+        refreshSyncModal(false);
+
+      }
+
+    );
+
+
+  /*
+     Pull when the tab becomes visible again,
+     so the other device's edits show up.
+  */
+
+  document.addEventListener(
+
+    "visibilitychange",
+
+    () => {
+
+      if (
+        !document.hidden &&
+        cloudConfig()
+      ) {
+
+        syncNow().catch(() => {});
+
+      }
+
+    }
 
   );
 
@@ -1944,4 +2772,20 @@ document
    START
 ===================================================== */
 
+loadLocal();
+
 renderHome();
+
+wireSyncUI();
+
+
+/*
+   Pull the cloud copy in the background
+   when sync is configured on this device.
+*/
+
+if (cloudConfig()) {
+
+  syncNow().catch(() => {});
+
+}

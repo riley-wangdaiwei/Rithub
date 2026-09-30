@@ -797,3 +797,45 @@ textarea:focus {
   gap: 12px;
   flex-shrink: 0;
 }
+/* ==================================================
+   SYNC
+================================================== */
+
+.topbar-actions {
+
+  display: flex;
+
+  gap: 28px;
+
+  align-items: center;
+}
+
+
+.sync-status {
+
+  margin-bottom: 22px;
+
+  font-size: 11px;
+
+  color: #777;
+
+  letter-spacing: 0.06em;
+}
+
+
+.sync-hint {
+
+  margin: 8px 0 20px;
+
+  font-size: 10px;
+
+  color: #999;
+
+  line-height: 1.6;
+}
+
+
+#syncModal input {
+
+  margin-bottom: 6px;
+}
