@@ -1540,11 +1540,6 @@ function attachHomeEvents() {
 
 }
 
-
-/* =====================================================
-   FOCUS
-===================================================== */
-
 function setFocus(id) {
 
   projects.forEach(
@@ -1567,11 +1562,38 @@ function setFocus(id) {
   );
 
 
+  /*
+    Move the focused project to the top
+    of the homepage list.
+  */
+
+  const focusIndex =
+    projects.findIndex(
+      project =>
+        project.id === id
+    );
+
+
+  if (focusIndex > 0) {
+
+    const [focused] =
+      projects.splice(
+        focusIndex, 1
+      );
+
+    projects.unshift(focused);
+
+  }
+
+
   save();
 
   renderHome();
 
 }
+/* =====================================================
+   FOCUS
+===================================================== */
 
 
 /* =====================================================
