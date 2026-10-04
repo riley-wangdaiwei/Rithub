@@ -12,6 +12,10 @@
   <header class="topbar">
     <div></div>
     <div class="topbar-actions">
+      <span id="timerBadge" class="timer-badge hidden"></span>
+      <a id="reportLink" class="new-project-button" href="report.html">
+        REPORT
+      </a>
       <button id="syncButton" class="new-project-button">
         SYNC
       </button>
@@ -38,6 +42,9 @@
 
       <div class="project-title-row">
         <h1 id="projectTitle"></h1>
+        <button id="timerButton" class="timer-button">
+          START TIMER
+        </button>
         <button id="commitButton" class="commit-button">
           COMMIT
         </button>
@@ -82,6 +89,13 @@
         + ADD NEXT
       </button>
 
+      <div id="commitTimerNote" class="timer-note hidden">
+        <span id="commitTimerNoteText"></span>
+        <button id="commitTimerDiscard" class="plain-button">
+          DISCARD
+        </button>
+      </div>
+
       <div class="modal-actions">
         <button id="closeCommitModal" class="plain-button">CANCEL</button>
         <button id="saveCommitButton" class="commit-button">COMMIT</button>
@@ -113,6 +127,7 @@
     ALL WORK AND NO PLAY MAKES ME A LLUD GIRL
   </footer>
 
-  <script src="app.js?v=4"></script>
+  <script src="report.js?v=1"></script>
+  <script src="app.js?v=5"></script>
 </body>
 </html>

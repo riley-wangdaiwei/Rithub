@@ -839,3 +839,111 @@ textarea:focus {
 
   margin-bottom: 6px;
 }
+
+
+/* ==================================================
+   TIMER
+================================================== */
+
+.timer-button {
+
+  border:
+    1px solid #151515;
+
+  background: transparent;
+
+  color: #151515;
+
+  padding:
+    8px 14px;
+
+  font-family: inherit;
+
+  font-size: 11px;
+
+  letter-spacing:
+    0.05em;
+
+  cursor: pointer;
+
+  white-space: nowrap;
+
+}
+
+
+.timer-button:hover:not(:disabled) {
+
+  border-color: #9b0000;
+
+  color: #9b0000;
+
+}
+
+
+.timer-button.running {
+
+  background: #151515;
+
+  color: #f7f4ec;
+
+}
+
+
+.timer-button.running:hover {
+
+  background: #9b0000;
+
+  border-color: #9b0000;
+
+  color: #f7f4ec;
+
+}
+
+
+.timer-button:disabled {
+
+  opacity: 0.35;
+
+  cursor: default;
+
+}
+
+
+.timer-badge {
+
+  font-size: 12px;
+
+  cursor: pointer;
+
+  border-bottom:
+    1px solid #151515;
+
+  margin-right: 18px;
+
+  white-space: nowrap;
+
+}
+
+
+.timer-note {
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  gap: 12px;
+
+  border:
+    1px dashed #151515;
+
+  padding:
+    8px 12px;
+
+  margin:
+    12px 0;
+
+  font-size: 12px;
+
+}

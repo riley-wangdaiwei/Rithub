@@ -1454,6 +1454,9 @@ function renderHome() {
 
   attachHomeEvents();
 
+
+  refreshTimerUI();
+
 }
 
 
@@ -1666,6 +1669,9 @@ function renderProject() {
   renderHistory(
     project
   );
+
+
+  refreshTimerUI();
 
 }
 
@@ -2128,6 +2134,26 @@ function renderHistory(project) {
 
           </span>
 
+
+          ${
+
+            commit.durationMin != null &&
+            commit.durationMin > 0
+
+              ? `
+
+                <span>
+
+                  · ${commit.durationMin} MIN
+
+                </span>
+
+              `
+
+              : ""
+
+          }
+
         </div>
 
         <button
@@ -2215,6 +2241,9 @@ document
       renderCommitNext(
         project
       );
+
+
+      refreshTimerNote();
 
 
       document
@@ -2399,12 +2428,33 @@ document
       };
 
 
+      /*
+        Timed commits carry their measured minutes.
+        Old commits without the field are untouched.
+      */
+
+      if (
+        pendingDurationMin != null &&
+        pendingDurationMin > 0
+      ) {
+
+        commit.durationMin =
+          pendingDurationMin;
+
+      }
+
+
       project.commits.push(
         commit
       );
 
 
       save();
+
+
+      pendingDurationMin = null;
+
+      refreshTimerNote();
 
 
       document
@@ -2791,12 +2841,500 @@ document
 
 
 /* =====================================================
+   TIMER
+   One global timer. Stopping it opens the commit
+   modal with the measured minutes pre-attached,
+   so the saved commit carries durationMin.
+   Survives reloads via localStorage.
+===================================================== */
+
+const TIMER_KEY =
+  "rithub-timer-v1";
+
+
+let activeTimer =
+  null;
+
+let pendingDurationMin =
+  null;
+
+let timerTickId =
+  null;
+
+
+function loadTimer() {
+
+  try {
+
+    const raw =
+      JSON.parse(
+        localStorage.getItem(
+          TIMER_KEY
+        )
+      );
+
+
+    if (
+
+      raw &&
+
+      typeof raw.projectId ===
+        "string" &&
+
+      typeof raw.startedAt ===
+        "string" &&
+
+      !isNaN(
+        Date.parse(
+          raw.startedAt
+        )
+      )
+
+    ) {
+
+      activeTimer =
+        raw;
+
+    }
+
+  } catch (e) {
+
+    activeTimer =
+      null;
+
+  }
+
+}
+
+
+function persistTimer() {
+
+  if (activeTimer) {
+
+    localStorage.setItem(
+
+      TIMER_KEY,
+
+      JSON.stringify(
+        activeTimer
+      )
+
+    );
+
+  } else {
+
+    localStorage.removeItem(
+      TIMER_KEY
+    );
+
+  }
+
+}
+
+/*
+   Pure time helpers (timerElapsedMs, timerElapsedMin,
+   formatElapsed) live in report.js, which index.html
+   loads before this file.
+*/
+
+function refreshTimerUI() {
+
+  const button =
+    document.getElementById(
+      "timerButton"
+    );
+
+
+  const badge =
+    document.getElementById(
+      "timerBadge"
+    );
+
+
+  if (!button || !badge) {
+
+    return;
+
+  }
+
+
+  const nowMs =
+    Date.now();
+
+
+  if (
+    activeTimer &&
+    activeTimer.projectId ===
+      currentProjectId
+  ) {
+
+    button.textContent =
+      "STOP " +
+      formatElapsed(
+        timerElapsedMs(
+          activeTimer.startedAt,
+          nowMs
+        )
+      );
+
+    button.disabled =
+      false;
+
+    button.classList.add(
+      "running"
+    );
+
+  } else if (activeTimer) {
+
+    button.textContent =
+      "TIMER BUSY";
+
+    button.disabled =
+      true;
+
+    button.classList.remove(
+      "running"
+    );
+
+  } else {
+
+    button.textContent =
+      "START TIMER";
+
+    button.disabled =
+      false;
+
+    button.classList.remove(
+      "running"
+    );
+
+  }
+
+
+  if (activeTimer) {
+
+    const project =
+      getProject(
+        activeTimer.projectId
+      );
+
+
+    badge.textContent =
+      "⏱ " +
+      formatElapsed(
+        timerElapsedMs(
+          activeTimer.startedAt,
+          nowMs
+        )
+      ) +
+      (
+        project
+          ? " · " + project.name
+          : ""
+      );
+
+    badge.classList.remove(
+      "hidden"
+    );
+
+  } else {
+
+    badge.classList.add(
+      "hidden"
+    );
+
+  }
+
+}
+
+
+function tickTimer() {
+
+  if (timerTickId) {
+
+    clearInterval(
+      timerTickId
+    );
+
+  }
+
+
+  timerTickId =
+    setInterval(
+
+      () => {
+
+        if (activeTimer) {
+
+          refreshTimerUI();
+
+        }
+
+      },
+
+      1000
+
+    );
+
+}
+
+
+function startTimer(
+  projectId
+) {
+
+  if (activeTimer) {
+
+    return;
+
+  }
+
+
+  activeTimer = {
+
+    projectId:
+      projectId,
+
+    startedAt:
+      new Date().toISOString()
+
+  };
+
+
+  persistTimer();
+
+  refreshTimerUI();
+
+}
+
+
+function stopTimerForCommit() {
+
+  if (!activeTimer) {
+
+    return;
+
+  }
+
+
+  pendingDurationMin =
+    timerElapsedMin(
+      activeTimer.startedAt,
+      Date.now()
+    );
+
+
+  activeTimer =
+    null;
+
+  persistTimer();
+
+  refreshTimerUI();
+
+  refreshTimerNote();
+
+
+  document
+    .getElementById(
+      "commitInput"
+    )
+    .value = "";
+
+
+  const project =
+    getProject(
+      currentProjectId
+    );
+
+
+  if (project) {
+
+    renderCommitNext(
+      project
+    );
+
+  }
+
+
+  document
+    .getElementById(
+      "commitModal"
+    )
+    .classList.remove(
+      "hidden"
+    );
+
+}
+
+
+function refreshTimerNote() {
+
+  const note =
+    document.getElementById(
+      "commitTimerNote"
+    );
+
+
+  const text =
+    document.getElementById(
+      "commitTimerNoteText"
+    );
+
+
+  if (!note || !text) {
+
+    return;
+
+  }
+
+
+  if (
+    pendingDurationMin != null &&
+    pendingDurationMin > 0
+  ) {
+
+    text.textContent =
+      "⏱ " +
+      pendingDurationMin +
+      " MIN WILL BE ATTACHED";
+
+    note.classList.remove(
+      "hidden"
+    );
+
+  } else {
+
+    note.classList.add(
+      "hidden"
+    );
+
+  }
+
+}
+
+
+document
+  .getElementById(
+    "timerButton"
+  )
+  .addEventListener(
+
+    "click",
+
+    () => {
+
+      if (
+        activeTimer &&
+        activeTimer.projectId ===
+          currentProjectId
+      ) {
+
+        stopTimerForCommit();
+
+      } else if (!activeTimer) {
+
+        const project =
+          getProject(
+            currentProjectId
+          );
+
+
+        if (project) {
+
+          startTimer(
+            project.id
+          );
+
+        }
+
+      }
+
+    }
+
+  );
+
+
+document
+  .getElementById(
+    "timerBadge"
+  )
+  .addEventListener(
+
+    "click",
+
+    () => {
+
+      if (!activeTimer) {
+
+        return;
+
+      }
+
+
+      const project =
+        getProject(
+          activeTimer.projectId
+        );
+
+
+      if (project) {
+
+        openProject(
+          project.id
+        );
+
+      } else {
+
+        /*
+           The project is gone — drop the
+           orphan timer instead of breaking.
+        */
+
+        activeTimer =
+          null;
+
+        persistTimer();
+
+        refreshTimerUI();
+
+      }
+
+    }
+
+  );
+
+
+document
+  .getElementById(
+    "commitTimerDiscard"
+  )
+  .addEventListener(
+
+    "click",
+
+    () => {
+
+      pendingDurationMin =
+        null;
+
+      refreshTimerNote();
+
+    }
+
+  );
+
+
+/* =====================================================
    START
 ===================================================== */
 
 loadLocal();
 
+loadTimer();
+
 renderHome();
+
+tickTimer();
 
 wireSyncUI();
 
