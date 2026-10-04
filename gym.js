@@ -90,7 +90,28 @@ function suggest(exId) {
 }
 
 /* ---------- 01 log ---------- */
-var curDay = 'push';
+var ROTATION = ['push', 'pull', 'legs'];
+function nextUp() {
+  if (!state.logs.length) return null;
+  var sorted = state.logs.slice().sort(function (a,b) { return b.date.localeCompare(a.date); });
+  var last = sorted[0];
+  var i = ROTATION.indexOf(last.day);
+  return { day: ROTATION[(i + 1) % 3], lastDay: last.day, lastDate: last.date };
+}
+var curDay = (nextUp() || {}).day || 'push';
+
+function syncDayTabs() {
+  Array.prototype.forEach.call(document.querySelectorAll('#dayTabs button'), function (x) {
+    x.classList.toggle('active', x.dataset.day === curDay);
+  });
+}
+function renderTodayLine() {
+  var el = document.getElementById('todayLine');
+  var n = nextUp();
+  el.innerHTML = n
+    ? 'NEXT UP: <b>' + n.day.toUpperCase() + '</b> · last ' + n.lastDate.slice(5) + ' ' + n.lastDay.toUpperCase()
+    : 'NEXT UP: -- · log one session to start the rotation';
+}
 
 function parseReps(str, sets) {
   var parts = String(str || '').split(/[,，\s]+/)
@@ -314,7 +335,7 @@ document.getElementById('clearBtn').addEventListener('click', function () {
 });
 
 /* ---------- init ---------- */
-function renderAll() { renderLog(); renderProgress(); renderGoals(); renderSettings(); }
+function renderAll() { syncDayTabs(); renderTodayLine(); renderLog(); renderProgress(); renderGoals(); renderSettings(); }
 document.getElementById('logDate').value = todayStr();
 renderGoalEditor();
 renderAll();

@@ -84,6 +84,8 @@
     .setrow input[type="number"] { width: 64px; font-size: 13px; }
     .danger { color: #9b0000; font-size: 11px; margin-top: 18px; }
     .hint { font-size: 11px; color: #999; margin: 8px 0 0; }
+    .todayline { font-size: 12px; letter-spacing: 0.08em; margin: 12px 0 2px; }
+    .todayline b { color: #9b0000; }
     .footer { text-align: center; font-size: 11px; color: #888; padding: 24px 0; }
   </style>
 </head>
@@ -105,6 +107,7 @@
       </div>
     </div>
     <p class="hint">Dumbbell weights are per dumbbell. Reps: one number = every set (10), or comma-separated (10,10,8).</p>
+    <div id="todayLine" class="todayline"></div>
     <div id="exerciseList"></div>
     <button id="saveBtn" class="black-button">SAVE WORKOUT</button>
     <div class="msg" id="saveMsg"></div>
