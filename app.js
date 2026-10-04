@@ -1,6 +1,15 @@
 const STORAGE_KEY = "rithub-v2";
 
 
+/*
+   Rolling retention: commits older than this
+   many days are pruned on load (and after a
+   cloud pull). Weekly numbers survive via the
+   report's COPY WEEK DATA button.
+*/
+const RETENTION_DAYS = 7;
+
+
 /* =====================================================
    CITY SYSTEM
    These are just the little places Rithub uses
@@ -285,6 +294,14 @@ function loadLocal() {
   }
 
 
+  projects =
+    pruneOldCommits(
+      projects,
+      Date.now(),
+      RETENTION_DAYS
+    );
+
+
   saveLocal();
 
 }
@@ -513,8 +530,40 @@ async function fetchRemoteEnvelope(cfg) {
 
 function adoptRemote(remote) {
 
-  projects = remote.projects;
-  localUpdatedAt = remote.updatedAt;
+  const beforeCount =
+    (remote.projects || [])
+      .reduce(
+        (n, p) => n + (p.commits || []).length,
+        0
+      );
+
+
+  projects =
+    pruneOldCommits(
+      remote.projects,
+      Date.now(),
+      RETENTION_DAYS
+    );
+
+
+  const afterCount =
+    projects
+      .reduce(
+        (n, p) => n + (p.commits || []).length,
+        0
+      );
+
+
+  /*
+     If pruning removed anything, the pruned
+     state is newer than the cloud copy: bump
+     the timestamp so the next sync pushes it
+     instead of sitting on stale cloud data.
+  */
+  localUpdatedAt =
+    afterCount < beforeCount
+      ? new Date().toISOString()
+      : remote.updatedAt;
 
   saveLocal();
 

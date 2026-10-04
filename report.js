@@ -251,6 +251,60 @@ function projectNames(projects) {
 }
 
 
+/*
+   Drop commits older than `days` (rolling window).
+   Conservative on purpose: a commit whose
+   createdAt can't be parsed is KEPT — never
+   delete on a guess. Returns new project objects
+   for pruned projects; untouched projects keep
+   their reference. Input is never mutated.
+*/
+
+function pruneOldCommits(projects, nowMs, days) {
+
+  days = days || 7;
+
+  const cutoff = nowMs - days * 86400000;
+
+
+  return (projects || []).map(p => {
+
+    const commits = p.commits || [];
+
+
+    const kept = commits.filter(c => {
+
+      const t = Date.parse(c && c.createdAt);
+
+
+      if (isNaN(t)) return true;
+
+
+      return t >= cutoff;
+
+    });
+
+
+    if (kept.length === commits.length) {
+
+      return p;
+
+    }
+
+
+    const np = {};
+
+    for (const k in p) np[k] = p[k];
+
+    np.commits = kept;
+
+    return np;
+
+  });
+
+}
+
+
 function sparkline(values) {
 
   const max =
@@ -775,8 +829,13 @@ function buildReport(projects, nowMs) {
 
   names.forEach(n => {
 
+    /*
+       Capped at the retention window: with
+       auto-prune at 7 days, a longer lookback
+       would report phantom quiet days.
+    */
     const st =
-      quietStreak(commits, n, todayStart, 14);
+      quietStreak(commits, n, todayStart, 7);
 
 
     if (st > hStreak) {
@@ -998,6 +1057,8 @@ if (
     buildReport,
 
     collectCommits,
+
+    pruneOldCommits,
 
     hourlyStats,
 
