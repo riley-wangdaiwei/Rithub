@@ -302,6 +302,15 @@ function loadLocal() {
     );
 
 
+  /*
+    Migration: drop anything archived under the old
+    soft-delete rule. Cancel now means gone, so old
+    cancelled shells are removed on next open.
+  */
+  projects =
+    projects.filter(p => !p.cancelled);
+
+
   saveLocal();
 
 }
@@ -544,6 +553,11 @@ function adoptRemote(remote) {
       Date.now(),
       RETENTION_DAYS
     );
+
+
+  /* Drop shells archived under the old soft-delete rule. */
+  projects =
+    projects.filter(p => !p.cancelled);
 
 
   const afterCount =
@@ -2749,15 +2763,16 @@ document
       }
 
 
-      const confirmCancel =
+      const confirmDelete =
         window.confirm(
 
-          `Cancel project "${project.name}"?`
+          `Delete project "${project.name}"?\n` +
+          `This removes it and all its commits permanently.`
 
         );
 
 
-      if (!confirmCancel) {
+      if (!confirmDelete) {
 
         return;
 
@@ -2765,15 +2780,21 @@ document
 
 
       /*
-        Don't delete.
-        Just archive it as cancelled.
+        Hard delete. Riles's rule: cancel means gone.
+        No trash bin, no archive shell.
       */
 
-      project.cancelled =
-        true;
+      const delIdx =
+        projects.findIndex(
+          p => p.id === currentProjectId
+        );
 
-      project.focus =
-        false;
+
+      if (delIdx >= 0) {
+
+        projects.splice(delIdx, 1);
+
+      }
 
 
       /*
