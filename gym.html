@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rithub · Gym Log</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      background: #f7f4ec;
+      color: #151515;
+      font-family: "Courier New", Courier, monospace;
+      font-size: 14px;
+      line-height: 1.5;
+      -webkit-text-size-adjust: 100%;
+    }
+    .topbar {
+      height: 64px;
+      padding: 0 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid #151515;
+    }
+    .topbar-title { font-size: 14px; letter-spacing: 0.05em; }
+    .back-link {
+      border: none; background: transparent; padding: 0;
+      font-family: inherit; font-size: 14px; cursor: pointer;
+      text-decoration: none; color: #151515;
+    }
+    .back-link:hover { color: #9b0000; }
+    main { padding: 20px; max-width: 560px; margin: 0 auto; }
+    .section-heading {
+      margin: 34px 0 14px; font-size: 10px; color: #777; letter-spacing: 0.14em;
+    }
+    .section-heading:first-child { margin-top: 6px; }
+    pre {
+      font-family: "Courier New", Courier, monospace;
+      font-size: 12px; line-height: 1.55;
+      white-space: pre; overflow-x: auto; margin: 0 0 20px 0;
+    }
+    .rule { border: none; border-top: 1px solid #151515; margin: 0 0 14px; }
+    .row-label { margin-bottom: 8px; font-size: 9px; color: #777; letter-spacing: 0.12em; }
+    input, select {
+      font-family: inherit; font-size: 14px; color: #151515;
+      background: transparent; border: none; border-bottom: 1px solid #777;
+      padding: 8px 0; outline: none; border-radius: 0;
+    }
+    input:focus, select:focus { border-color: #151515; }
+    input[type="number"] { width: 90px; }
+    input[type="checkbox"] { width: auto; }
+    .log-controls { display: flex; gap: 18px; align-items: flex-end; margin-bottom: 16px; flex-wrap: wrap; }
+    .daytabs { display: flex; gap: 16px; }
+    .daytabs button {
+      border: none; background: transparent; padding: 4px 0;
+      font-family: inherit; font-size: 13px; letter-spacing: 0.08em;
+      color: #777; cursor: pointer; border-bottom: 1px solid transparent;
+    }
+    .daytabs button.active { color: #151515; border-bottom-color: #151515; }
+    .exblock { border-top: 1px solid #cfcac0; padding: 14px 0; }
+    .exname { font-size: 14px; text-transform: uppercase; }
+    .exsuggest { font-size: 11px; color: #777; margin: 4px 0 10px; }
+    .exsuggest.bump { color: #9b0000; }
+    .exinputs { display: flex; gap: 18px; flex-wrap: wrap; }
+    .exinputs label { display: flex; flex-direction: column; gap: 2px; }
+    .black-button {
+      border: 1px solid #151515; background: #151515; color: #f7f4ec;
+      padding: 10px 18px; font-family: inherit; font-size: 12px;
+      letter-spacing: 0.05em; cursor: pointer; margin-top: 16px;
+    }
+    .black-button:hover { background: #9b0000; border-color: #9b0000; }
+    .plain-button {
+      border: none; background: transparent; padding: 0;
+      font-family: inherit; font-size: 11px; color: #555; cursor: pointer;
+    }
+    .plain-button:hover { color: #000; text-decoration: underline; }
+    .msg { font-size: 12px; color: #555; margin-top: 10px; min-height: 18px; }
+    .goalrow, .setrow {
+      display: flex; gap: 14px; align-items: center;
+      padding: 10px 0; border-bottom: 1px solid #cfcac0; font-size: 13px;
+    }
+    .goalrow .gname, .setrow .sname { flex: 1; text-transform: uppercase; font-size: 12px; }
+    .setrow input[type="number"] { width: 64px; font-size: 13px; }
+    .danger { color: #9b0000; font-size: 11px; margin-top: 18px; }
+    .hint { font-size: 11px; color: #999; margin: 8px 0 0; }
+    .footer { text-align: center; font-size: 11px; color: #888; padding: 24px 0; }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <a class="back-link" href="index.html">&lt;- BACK</a>
+    <div class="topbar-title">GYM LOG</div>
+    <div></div>
+  </header>
+
+  <main>
+    <div class="section-heading">01 · LOG WORKOUT</div>
+    <div class="log-controls">
+      <label><span class="row-label">DATE</span><br><input type="date" id="logDate"></label>
+      <div class="daytabs" id="dayTabs">
+        <button data-day="push" class="active">PUSH</button>
+        <button data-day="pull">PULL</button>
+        <button data-day="legs">LEGS</button>
+      </div>
+    </div>
+    <p class="hint">Dumbbell weights are per dumbbell. Reps: one number = every set (10), or comma-separated (10,10,8).</p>
+    <div id="exerciseList"></div>
+    <button id="saveBtn" class="black-button">SAVE WORKOUT</button>
+    <div class="msg" id="saveMsg"></div>
+
+    <div class="section-heading">02 · PROGRESS</div>
+    <hr class="rule">
+    <pre id="progressPre">loading…</pre>
+
+    <div class="section-heading">03 · MONTH GOALS</div>
+    <hr class="rule">
+    <pre id="goalsPre">loading…</pre>
+    <div class="row-label">SET GOALS</div>
+    <div class="log-controls">
+      <label><span class="row-label">MONTH</span><br><select id="goalMonth"></select></label>
+    </div>
+    <div id="goalEditor"></div>
+
+    <div class="section-heading">04 · SETTINGS</div>
+    <hr class="rule">
+    <div class="setrow">
+      <span class="sname">Keep daily logs (days)</span>
+      <input type="number" id="retentionInput" min="7" max="365">
+    </div>
+    <p class="hint">Old daily logs auto-delete; monthly bests, goals and settings are kept.</p>
+    <div class="row-label" style="margin-top:18px">EXERCISE PARAMS</div>
+    <div id="exSettings"></div>
+    <div class="row-label" style="margin-top:18px">BACKUP</div>
+    <div style="display:flex;gap:18px;margin-top:8px">
+      <button class="plain-button" id="exportBtn">EXPORT JSON</button>
+      <label class="plain-button">IMPORT JSON<input type="file" id="importFile" accept=".json" hidden></label>
+    </div>
+    <button class="plain-button danger" id="clearBtn">DELETE ALL GYM DATA</button>
+  </main>
+
+  <footer class="footer">ALL WORK AND NO PLAY MAKES ME A LLUD GIRL</footer>
+
+  <script src="gym.js?v=1"></script>
+</body>
+</html>
