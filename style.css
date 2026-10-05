@@ -1055,3 +1055,24 @@ textarea:focus {
   white-space: nowrap;
 
 }
+
+
+/* QUICK TODO inbox (home top) */
+
+.quick-todo-section {
+
+  margin-bottom: 28px;
+
+  padding-bottom: 20px;
+
+  border-bottom:
+    1px solid #cfcac0;
+
+}
+
+
+.next-actions button.quick-todo-timer.running {
+
+  color: #9b0000;
+
+}

@@ -10,6 +10,15 @@ const STORAGE_KEY = "rithub-v2";
 const RETENTION_DAYS = 7;
 
 
+/*
+   Quick-todo inbox: a real project in the data model
+   (so timer + report + sync all work), rendered as its
+   own section at the top of home — never as a card.
+   Small scattered todos live here, not in big projects.
+*/
+const INBOX_ID = "quick-todos";
+
+
 /* =====================================================
    CITY SYSTEM
    These are just the little places Rithub uses
@@ -309,6 +318,39 @@ function loadLocal() {
   */
   projects =
     projects.filter(p => !p.cancelled);
+
+
+  /*
+    The quick-todo inbox always exists. If it was
+    deleted or never created, re-create it empty.
+  */
+  if (
+    !projects.some(p => p.id === INBOX_ID)
+  ) {
+
+    projects.push({
+
+      id:
+        INBOX_ID,
+
+      name:
+        "Quick Todos",
+
+      focus:
+        false,
+
+      cancelled:
+        false,
+
+      next:
+        [],
+
+      commits:
+        []
+
+    });
+
+  }
 
 
   saveLocal();
@@ -1169,6 +1211,15 @@ function getProject(id) {
 }
 
 
+function getInboxProject() {
+
+  return getProject(
+    INBOX_ID
+  );
+
+}
+
+
 function activeProjects() {
 
   return projects.filter(
@@ -1340,7 +1391,10 @@ function renderHome() {
 
 
   const projectsToShow =
-    activeProjects();
+    activeProjects().filter(
+      project =>
+        project.id !== INBOX_ID
+    );
 
 
   projectsToShow.forEach(
@@ -1519,6 +1573,9 @@ function renderHome() {
 
 
   refreshTimerUI();
+
+
+  renderQuickTodos();
 
 }
 
@@ -1743,6 +1800,464 @@ function renderProject() {
 
 
 /* =====================================================
+   QUICK TODO INBOX (home top)
+   Small scattered todos that don't deserve a project.
+   Add → time it → check it off → gone forever.
+   Timed minutes land as commits, so the report sees
+   them like any other work.
+===================================================== */
+
+function renderQuickTodos() {
+
+  const inbox =
+    getInboxProject();
+
+
+  const container =
+    document.getElementById(
+      "quickTodoList"
+    );
+
+
+  if (!inbox || !container) {
+
+    return;
+
+  }
+
+
+  container.innerHTML =
+    "";
+
+
+  inbox.next.forEach(
+
+    (item, index) => {
+
+      const row =
+        document.createElement(
+          "div"
+        );
+
+
+      row.className =
+        "next-item";
+
+
+      const timing =
+        !!(
+          activeTimer &&
+          activeTimer.todoId === item.id
+        );
+
+
+      const busy =
+        !!(
+          activeTimer &&
+          !timing
+        );
+
+
+      row.innerHTML = `
+
+        <div class="next-number">
+
+          ${index + 1}
+
+        </div>
+
+
+        <div class="next-text">
+
+          ${escapeHtml(
+            item.text
+          )}
+
+        </div>
+
+
+        <div class="next-actions">
+
+          <button
+            class="quick-todo-timer${timing ? " running" : ""}"
+            data-id="${item.id}"
+            ${busy ? "disabled" : ""}
+            title="Time this todo"
+          >
+            ${timing ? "STOP" : "TIME"}
+          </button>
+
+          <button
+            class="quick-todo-done"
+            data-id="${item.id}"
+            title="Done — remove forever"
+          >
+            ✓
+          </button>
+
+          <button
+            class="quick-todo-delete"
+            data-id="${item.id}"
+            title="Delete"
+          >
+            ×
+          </button>
+
+        </div>
+
+      `;
+
+
+      container.appendChild(
+        row
+      );
+
+    }
+
+  );
+
+
+  wireQuickTodoButtons();
+
+}
+
+
+function wireQuickTodoButtons() {
+
+  document
+    .querySelectorAll(
+      ".quick-todo-timer"
+    )
+    .forEach(button => {
+
+      button.addEventListener(
+
+        "click",
+
+        () => {
+
+          const id =
+            button.dataset.id;
+
+
+          if (
+            activeTimer &&
+            activeTimer.todoId === id
+          ) {
+
+            stopTimerForCommit();
+
+          } else {
+
+            startQuickTodoTimer(id);
+
+          }
+
+        }
+
+      );
+
+    });
+
+
+  document
+    .querySelectorAll(
+      ".quick-todo-done"
+    )
+    .forEach(button => {
+
+      button.addEventListener(
+
+        "click",
+
+        () => {
+
+          completeQuickTodo(
+            button.dataset.id
+          );
+
+        }
+
+      );
+
+    });
+
+
+  document
+    .querySelectorAll(
+      ".quick-todo-delete"
+    )
+    .forEach(button => {
+
+      button.addEventListener(
+
+        "click",
+
+        () => {
+
+          deleteQuickTodo(
+            button.dataset.id
+          );
+
+        }
+
+      );
+
+    });
+
+}
+
+
+function startQuickTodoTimer(id) {
+
+  if (activeTimer) {
+
+    return;
+
+  }
+
+
+  const inbox =
+    getInboxProject();
+
+
+  if (!inbox) {
+
+    return;
+
+  }
+
+
+  const item =
+    inbox.next.find(
+      i => i.id === id
+    );
+
+
+  if (!item) {
+
+    return;
+
+  }
+
+
+  startTimer(
+    INBOX_ID,
+    { id: item.id, text: item.text }
+  );
+
+
+  renderQuickTodos();
+
+  refreshTimerUI();
+
+}
+
+
+/*
+   One timed commit for a todo. Shared by the stop
+   flow and the done-while-timing flow.
+*/
+
+function logTimedTodo(project, text, durationMin) {
+
+  const commit = {
+
+    id:
+      crypto.randomUUID(),
+
+    text:
+      text,
+
+    code:
+      generateCommitCode(),
+
+    createdAt:
+      new Date().toISOString()
+
+  };
+
+
+  if (
+    durationMin != null &&
+    durationMin > 0
+  ) {
+
+    commit.durationMin =
+      durationMin;
+
+  }
+
+
+  project.commits.push(
+    commit
+  );
+
+}
+
+
+/*
+   Done means done: if its timer is running, log the
+   minutes first — then it vanishes forever.
+*/
+
+function completeQuickTodo(id) {
+
+  const inbox =
+    getInboxProject();
+
+
+  if (!inbox) {
+
+    return;
+
+  }
+
+
+  if (
+    activeTimer &&
+    activeTimer.todoId === id
+  ) {
+
+    const item =
+      inbox.next.find(
+        i => i.id === id
+      );
+
+
+    logTimedTodo(
+      inbox,
+      item
+        ? item.text
+        : activeTimer.todoText || "",
+      timerElapsedMin(
+        activeTimer.startedAt,
+        Date.now()
+      )
+    );
+
+
+    activeTimer =
+      null;
+
+    persistTimer();
+
+    pendingDurationMin =
+      null;
+
+  }
+
+
+  inbox.next =
+    inbox.next.filter(
+      i => i.id !== id
+    );
+
+
+  save();
+
+  renderQuickTodos();
+
+  refreshTimerUI();
+
+}
+
+
+function deleteQuickTodo(id) {
+
+  const inbox =
+    getInboxProject();
+
+
+  if (!inbox) {
+
+    return;
+
+  }
+
+
+  inbox.next =
+    inbox.next.filter(
+      i => i.id !== id
+    );
+
+
+  save();
+
+  renderQuickTodos();
+
+}
+
+
+function addQuickTodoFromInput() {
+
+  const inbox =
+    getInboxProject();
+
+
+  const input =
+    document.getElementById(
+      "quickTodoInput"
+    );
+
+
+  if (
+    pushNextItem(
+      inbox,
+      input.value
+    )
+  ) {
+
+    input.value =
+      "";
+
+  }
+
+
+  renderQuickTodos();
+
+}
+
+
+document
+  .getElementById(
+    "addQuickTodoButton"
+  )
+  .addEventListener(
+
+    "click",
+
+    () => {
+
+      addQuickTodoFromInput();
+
+    }
+
+  );
+
+
+document
+  .getElementById(
+    "quickTodoInput"
+  )
+  .addEventListener(
+
+    "keydown",
+
+    event => {
+
+      if (event.key === "Enter") {
+
+        addQuickTodoFromInput();
+
+      }
+
+    }
+
+  );
+
+
+/* =====================================================
    NEXT
 ===================================================== */
 
@@ -1819,14 +2334,6 @@ function renderNext(project) {
               : ""
           }
 
-
-          <button
-            class="todo-timer"
-            data-id="${item.id}"
-            title="Time this todo"
-          >
-            ⏱
-          </button>
 
           <button
             class="commit-next-item"
@@ -1956,44 +2463,6 @@ function renderNext(project) {
       button.addEventListener("click", () => {
         commitNextItem(button.dataset.id);
       });
-    });
-
-
-  document
-    .querySelectorAll(".todo-timer")
-    .forEach(button => {
-
-      const itemId =
-        button.dataset.id;
-
-
-      if (
-        activeTimer &&
-        activeTimer.todoId === itemId
-      ) {
-
-        button.classList.add(
-          "running"
-        );
-
-      }
-
-
-      if (activeTimer) {
-
-        button.disabled =
-          true;
-
-      }
-
-
-      button.addEventListener(
-        "click",
-        () => {
-          startTodoTimer(itemId);
-        }
-      );
-
     });
 
 }
@@ -2265,7 +2734,7 @@ function renderHistory(project) {
                   commit.text
                 )
 
-              : `<span style="color:#aaa;">⏱ timed</span>`
+              : `<span style="color:#aaa;">timed</span>`
 
           }
 
@@ -3204,7 +3673,6 @@ function refreshTimerUI() {
 
 
     badge.textContent =
-      "⏱ " +
       formatElapsed(
         timerElapsedMs(
           activeTimer.startedAt,
@@ -3275,7 +3743,7 @@ function refreshTimerOnlyUI() {
   );
 
   button.textContent =
-    on ? "⏱ ONLY ✓" : "⏱ ONLY";
+    on ? "TIMER ONLY · ON" : "TIMER ONLY";
 
 }
 
@@ -3388,58 +3856,6 @@ function startTimer(
 }
 
 
-/*
-   Start the project timer tagged with one todo.
-   On stop, the todo auto-completes into a timed
-   commit and leaves the list — no modal.
-*/
-
-function startTodoTimer(itemId) {
-
-  if (activeTimer) {
-
-    return;
-
-  }
-
-
-  const project =
-    getProject(
-      currentProjectId
-    );
-
-
-  if (!project) {
-
-    return;
-
-  }
-
-
-  const item =
-    project.next.find(
-      i => i.id === itemId
-    );
-
-
-  if (!item) {
-
-    return;
-
-  }
-
-
-  startTimer(
-    project.id,
-    { id: item.id, text: item.text }
-  );
-
-
-  renderProject();
-
-}
-
-
 function stopTimerForCommit() {
 
   if (!activeTimer) {
@@ -3485,9 +3901,9 @@ function stopTimerForCommit() {
 
 
   /*
-    Todo timer: the todo auto-completes into a timed
-    commit and leaves the list. No modal — the todo
-    text IS the commit content.
+    Quick-todo timer: log the minutes as a timed
+    commit, but the todo STAYS in the inbox — she
+    checks it off manually when done. No modal.
   */
 
   if (
@@ -3503,46 +3919,11 @@ function stopTimerForCommit() {
 
     if (todoIdx >= 0) {
 
-      const todoText =
+      logTimedTodo(
+        timerProject,
         timerTodoText ||
-        timerProject.next[todoIdx].text;
-
-
-      const commit = {
-
-        id:
-          crypto.randomUUID(),
-
-        text:
-          todoText,
-
-        code:
-          generateCommitCode(),
-
-        createdAt:
-          new Date().toISOString()
-
-      };
-
-
-      if (
-        pendingDurationMin != null &&
-        pendingDurationMin > 0
-      ) {
-
-        commit.durationMin =
-          pendingDurationMin;
-
-      }
-
-
-      timerProject.commits.push(
-        commit
-      );
-
-      timerProject.next.splice(
-        todoIdx,
-        1
+          timerProject.next[todoIdx].text,
+        pendingDurationMin
       );
 
 
@@ -3554,8 +3935,16 @@ function stopTimerForCommit() {
 
       refreshTimerNote();
 
+      refreshTimerUI();
 
-      if (timerProjectId === currentProjectId) {
+
+      if (timerProjectId === INBOX_ID) {
+
+        renderQuickTodos();
+
+      } else if (
+        timerProjectId === currentProjectId
+      ) {
 
         renderProject();
 
@@ -3567,8 +3956,8 @@ function stopTimerForCommit() {
     }
 
     /*
-      Todo vanished mid-timer (deleted on another
-      device): fall through to the normal flow.
+      Todo vanished mid-timer: fall through to the
+      normal flow.
     */
 
   }
@@ -3697,7 +4086,6 @@ function refreshTimerNote() {
   ) {
 
     text.textContent =
-      "⏱ " +
       pendingDurationMin +
       " MIN WILL BE ATTACHED";
 
@@ -3782,9 +4170,17 @@ document
 
       if (project) {
 
-        openProject(
-          project.id
-        );
+        if (project.id === INBOX_ID) {
+
+          renderHome();
+
+        } else {
+
+          openProject(
+            project.id
+          );
+
+        }
 
       } else {
 

@@ -27,6 +27,16 @@
 
   <main>
     <section id="homeView" class="page">
+      <section class="section quick-todo-section">
+        <div class="section-heading">QUICK TODO</div>
+        <div id="quickTodoList" class="next-list"></div>
+        <div class="next-add-row">
+          <input id="quickTodoInput" class="next-input" placeholder="a small thing, e.g. reply to that email…" maxlength="140" />
+          <button id="addQuickTodoButton" class="plain-button add-button">
+            + ADD
+          </button>
+        </div>
+      </section>
       <div id="projectsList" class="projects-list"></div>
     </section>
 
@@ -46,7 +56,7 @@
           START TIMER
         </button>
         <button id="timerOnlyButton" class="timer-only-button" title="Timer-only: when ON, stopping the timer logs the minutes directly — no commit text needed.">
-          ⏱ ONLY
+          TIMER ONLY
         </button>
         <button id="commitButton" class="commit-button">
           COMMIT
@@ -137,6 +147,6 @@
   </footer>
 
   <script src="report.js?v=1"></script>
-  <script src="app.js?v=8"></script>
+  <script src="app.js?v=9"></script>
 </body>
 </html>
