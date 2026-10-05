@@ -1821,6 +1821,14 @@ function renderNext(project) {
 
 
           <button
+            class="todo-timer"
+            data-id="${item.id}"
+            title="Time this todo"
+          >
+            ⏱
+          </button>
+
+          <button
             class="commit-next-item"
             data-id="${item.id}"
             title="Commit this item"
@@ -1950,6 +1958,44 @@ function renderNext(project) {
       });
     });
 
+
+  document
+    .querySelectorAll(".todo-timer")
+    .forEach(button => {
+
+      const itemId =
+        button.dataset.id;
+
+
+      if (
+        activeTimer &&
+        activeTimer.todoId === itemId
+      ) {
+
+        button.classList.add(
+          "running"
+        );
+
+      }
+
+
+      if (activeTimer) {
+
+        button.disabled =
+          true;
+
+      }
+
+
+      button.addEventListener(
+        "click",
+        () => {
+          startTodoTimer(itemId);
+        }
+      );
+
+    });
+
 }
 
 
@@ -1982,7 +2028,6 @@ function commitNextItem(id) {
 
   save();
   renderProject();
-  promptForNextCommit(project);
 }
 
 
@@ -2056,19 +2101,68 @@ function deleteNext(id) {
    ADD NEXT
 ===================================================== */
 
-function promptForNextCommit(project) {
-  const text = prompt("next commit");
+function pushNextItem(project, text) {
 
-  if (!text || !text.trim()) return;
+  const clean =
+    (text || "").trim();
+
+
+  if (!project || !clean) {
+
+    return false;
+
+  }
+
 
   project.next.push({
-    id: crypto.randomUUID(),
-    text: text.trim()
+
+    id:
+      crypto.randomUUID(),
+
+    text:
+      clean
+
   });
 
+
   save();
-  renderProject();
+
+  return true;
+
 }
+
+
+function addNextFromInput() {
+
+  const project =
+    getProject(
+      currentProjectId
+    );
+
+
+  const input =
+    document.getElementById(
+      "nextInput"
+    );
+
+
+  if (
+    pushNextItem(
+      project,
+      input.value
+    )
+  ) {
+
+    input.value =
+      "";
+
+  }
+
+
+  renderProject();
+
+}
+
 
 document
   .getElementById(
@@ -2080,39 +2174,28 @@ document
 
     () => {
 
-      const project =
-        getProject(
-          currentProjectId
-        );
+      addNextFromInput();
+
+    }
+
+  );
 
 
-      const text =
-        prompt(
-          "next commit"
-        );
+document
+  .getElementById(
+    "nextInput"
+  )
+  .addEventListener(
 
+    "keydown",
 
-      if (!text) {
+    event => {
 
-        return;
+      if (event.key === "Enter") {
+
+        addNextFromInput();
 
       }
-
-
-      project.next.push({
-
-        id:
-          crypto.randomUUID(),
-
-        text:
-          text.trim()
-
-      });
-
-
-      save();
-
-      renderProject();
 
     }
 
@@ -2403,41 +2486,62 @@ document
 
     () => {
 
-      const project =
-        getProject(
-          currentProjectId
-        );
+      addCommitNextFromInput();
+
+    }
+
+  );
 
 
-      const text =
-        prompt(
-          "next commit"
-        );
+function addCommitNextFromInput() {
+
+  const project =
+    getProject(
+      currentProjectId
+    );
 
 
-      if (!text) {
+  const input =
+    document.getElementById(
+      "commitNextInput"
+    );
 
-        return;
+
+  if (
+    pushNextItem(
+      project,
+      input.value
+    )
+  ) {
+
+    input.value =
+      "";
+
+
+    renderCommitNext(
+      project
+    );
+
+  }
+
+}
+
+
+document
+  .getElementById(
+    "commitNextInput"
+  )
+  .addEventListener(
+
+    "keydown",
+
+    event => {
+
+      if (event.key === "Enter") {
+
+        addCommitNextFromInput();
 
       }
-
-
-      project.next.push({
-
-        id:
-          crypto.randomUUID(),
-
-        text:
-          text.trim()
-
-      });
-
-
-      save();
-
-      renderCommitNext(
-        project
-      );
 
     }
 
@@ -2541,7 +2645,6 @@ document
 
 
       renderProject();
-      promptForNextCommit(project);
 
     }
 
@@ -3112,6 +3215,12 @@ function refreshTimerUI() {
         project
           ? " · " + project.name
           : ""
+      ) +
+      (
+        activeTimer.todoText
+          ? " · " +
+            activeTimer.todoText.slice(0, 24)
+          : ""
       );
 
     badge.classList.remove(
@@ -3239,7 +3348,8 @@ function tickTimer() {
 
 
 function startTimer(
-  projectId
+  projectId,
+  todo
 ) {
 
   if (activeTimer) {
@@ -3260,9 +3370,72 @@ function startTimer(
   };
 
 
+  if (todo) {
+
+    activeTimer.todoId =
+      todo.id;
+
+    activeTimer.todoText =
+      todo.text;
+
+  }
+
+
   persistTimer();
 
   refreshTimerUI();
+
+}
+
+
+/*
+   Start the project timer tagged with one todo.
+   On stop, the todo auto-completes into a timed
+   commit and leaves the list — no modal.
+*/
+
+function startTodoTimer(itemId) {
+
+  if (activeTimer) {
+
+    return;
+
+  }
+
+
+  const project =
+    getProject(
+      currentProjectId
+    );
+
+
+  if (!project) {
+
+    return;
+
+  }
+
+
+  const item =
+    project.next.find(
+      i => i.id === itemId
+    );
+
+
+  if (!item) {
+
+    return;
+
+  }
+
+
+  startTimer(
+    project.id,
+    { id: item.id, text: item.text }
+  );
+
+
+  renderProject();
 
 }
 
@@ -3278,6 +3451,14 @@ function stopTimerForCommit() {
 
   const timerProjectId =
     activeTimer.projectId;
+
+
+  const timerTodoId =
+    activeTimer.todoId;
+
+
+  const timerTodoText =
+    activeTimer.todoText;
 
 
   pendingDurationMin =
@@ -3301,6 +3482,96 @@ function stopTimerForCommit() {
     getProject(
       timerProjectId
     );
+
+
+  /*
+    Todo timer: the todo auto-completes into a timed
+    commit and leaves the list. No modal — the todo
+    text IS the commit content.
+  */
+
+  if (
+    timerProject &&
+    timerTodoId
+  ) {
+
+    const todoIdx =
+      timerProject.next.findIndex(
+        i => i.id === timerTodoId
+      );
+
+
+    if (todoIdx >= 0) {
+
+      const todoText =
+        timerTodoText ||
+        timerProject.next[todoIdx].text;
+
+
+      const commit = {
+
+        id:
+          crypto.randomUUID(),
+
+        text:
+          todoText,
+
+        code:
+          generateCommitCode(),
+
+        createdAt:
+          new Date().toISOString()
+
+      };
+
+
+      if (
+        pendingDurationMin != null &&
+        pendingDurationMin > 0
+      ) {
+
+        commit.durationMin =
+          pendingDurationMin;
+
+      }
+
+
+      timerProject.commits.push(
+        commit
+      );
+
+      timerProject.next.splice(
+        todoIdx,
+        1
+      );
+
+
+      pendingDurationMin =
+        null;
+
+
+      save();
+
+      refreshTimerNote();
+
+
+      if (timerProjectId === currentProjectId) {
+
+        renderProject();
+
+      }
+
+
+      return;
+
+    }
+
+    /*
+      Todo vanished mid-timer (deleted on another
+      device): fall through to the normal flow.
+    */
+
+  }
 
 
   /*

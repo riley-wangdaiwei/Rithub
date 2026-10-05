@@ -984,3 +984,74 @@ textarea:focus {
   font-size: 12px;
 
 }
+
+
+/* TODO timer button + inline add row (2026-10-05) */
+
+.next-actions button:disabled {
+
+  opacity: 0.25;
+
+  cursor: default;
+
+}
+
+
+.next-actions button.todo-timer.running {
+
+  color: #9b0000;
+
+}
+
+
+.next-add-row {
+
+  display: flex;
+
+  gap: 10px;
+
+  margin-top: 15px;
+
+  align-items: center;
+
+}
+
+
+.next-input {
+
+  flex: 1;
+
+  border: none;
+
+  border-bottom:
+    1px solid #cfcac0;
+
+  background: transparent;
+
+  font-family: inherit;
+
+  font-size: 14px;
+
+  padding: 8px 2px;
+
+  color: #151515;
+
+  outline: none;
+
+}
+
+
+.next-input::placeholder {
+
+  color: #aaa;
+
+}
+
+
+.next-add-row .add-button {
+
+  margin-top: 0;
+
+  white-space: nowrap;
+
+}

@@ -54,11 +54,14 @@
       </div>
 
       <section class="section">
-        <div class="section-heading">NEXT COMMIT</div>
+        <div class="section-heading">TODO</div>
         <div id="nextCommitList" class="next-list"></div>
-        <button id="addNextButton" class="plain-button add-button">
-          + ADD NEXT
-        </button>
+        <div class="next-add-row">
+          <input id="nextInput" class="next-input" placeholder="add a small todo…" maxlength="140" />
+          <button id="addNextButton" class="plain-button add-button">
+            + ADD
+          </button>
+        </div>
       </section>
 
       <section class="section history-section">
@@ -88,9 +91,12 @@
       <div class="commit-next-heading">NEXT</div>
       <div id="commitNextList" class="commit-next-list"></div>
 
-      <button id="addCommitNextButton" class="plain-button add-button">
-        + ADD NEXT
-      </button>
+      <div class="next-add-row">
+        <input id="commitNextInput" class="next-input" placeholder="add a small todo…" maxlength="140" />
+        <button id="addCommitNextButton" class="plain-button add-button">
+          + ADD
+        </button>
+      </div>
 
       <div id="commitTimerNote" class="timer-note hidden">
         <span id="commitTimerNoteText"></span>
@@ -131,6 +137,6 @@
   </footer>
 
   <script src="report.js?v=1"></script>
-  <script src="app.js?v=7"></script>
+  <script src="app.js?v=8"></script>
 </body>
 </html>
