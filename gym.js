@@ -517,6 +517,13 @@ async function gymGhApi(path, token, options) {
   return res.json();
 }
 function gymEnvelope() { return { updatedAt: gymUpdatedAt, data: state }; }
+function countGymEntries(st) {
+  if (!st || !st.logs) return 0;
+  return st.logs.reduce(function (n, l) { return n + (l.entries ? l.entries.length : 0); }, 0);
+}
+function stampGymUpdatedAt() {
+  if (!gymUpdatedAt) { gymUpdatedAt = new Date().toISOString(); persistGym(); }
+}
 async function gymFetchRemote(cfg) {
   var gist = await gymGhApi('/gists/' + cfg.gistId, cfg.token);
   var file = gist.files && gist.files[GYM_GIST_FILE];
@@ -530,12 +537,13 @@ async function gymFetchRemote(cfg) {
 function gymAdoptRemote(remote) {
   state = remote.data;
   ensureExerciseDefaults();
-  gymUpdatedAt = remote.updatedAt;
+  gymUpdatedAt = remote.updatedAt || new Date().toISOString();
   persistGym();
   setGymSyncMeta({ lastSyncAt: remote.updatedAt });
   renderAll();
 }
 async function gymPushEnvelope(cfg) {
+  stampGymUpdatedAt();
   var meta = gymSyncMeta();
   var remote = await gymFetchRemote(cfg);
   if (remote && remote.updatedAt && gymUpdatedAt && remote.updatedAt > gymUpdatedAt &&
@@ -571,10 +579,17 @@ async function gymSyncNow() {
   try {
     var remote = await gymFetchRemote(cfg);
     if (!remote) { await gymPushEnvelope(cfg); gymSetStatus('pushed'); return 'pushed'; }
-    if (remote.updatedAt && (!gymUpdatedAt || remote.updatedAt > gymUpdatedAt)) {
+    if (!remote.updatedAt) {
+      var rN = countGymEntries(remote.data), lN = countGymEntries(state);
+      if (rN > 0 && lN === 0) {
+        gymAdoptRemote(remote); gymSetStatus('pulled ' + rN + ' entries'); return 'pulled';
+      }
+      await gymPushEnvelope(cfg); gymSetStatus('pushed ' + lN + ' entries'); return 'pushed';
+    }
+    if (!gymUpdatedAt || remote.updatedAt > gymUpdatedAt) {
       gymAdoptRemote(remote); gymSetStatus('pulled'); return 'pulled';
     }
-    if (gymUpdatedAt && remote.updatedAt && gymUpdatedAt > remote.updatedAt) {
+    if (gymUpdatedAt > remote.updatedAt) {
       await gymPushEnvelope(cfg); gymSetStatus('pushed'); return 'pushed';
     }
     gymSetStatus('up to date'); return 'up to date';
