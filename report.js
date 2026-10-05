@@ -681,10 +681,12 @@ function hourAxis() {
 
 
 /*
-   DEEP WEEK grid — 7 rows x 24 columns, 1 char = 1h.
-   Each project gets one letter (first free letter of
-   its name); lowercase = normal work, UPPERCASE =
-   deep work. Deep cells overwrite normal ones.
+   DEEP WEEK grid — 7 rows (rolling last 7 days).
+   Dots, like the reference: filled = work, empty =
+   unused time, and deep work gets its own mark
+   (red on web, ◆ in text).
+   deepWeekCells returns 0/1/2 per slot so both the
+   text grid and the web dot grid share one source.
 */
 function weekdayShort(ms) {
 
@@ -696,81 +698,44 @@ function weekdayShort(ms) {
 }
 
 
-function projectLetters(names) {
+function last7Days(nowMs) {
 
-  const used = {};
+  const todayStart =
+    dayStartMs(nowMs);
 
-  const out = {};
-
-  const sorted =
-    names.slice().sort();
-
-
-  sorted.forEach(name => {
-
-    const low =
-      String(name).toLowerCase();
-
-    let ch =
-      null;
+  const days =
+    [];
 
 
-    for (const c of low) {
+  for (let i = 6; i >= 0; i--) {
 
-      if (
-        /[a-z0-9]/.test(c) &&
-        !used[c]
-      ) {
+    days.push(
+      todayStart - i * 86400000
+    );
 
-        ch = c;
-
-        break;
-
-      }
-
-    }
+  }
 
 
-    if (!ch) {
-
-      let i = 0;
-
-      while (used["#" + i]) {
-
-        i++;
-
-      }
-
-      ch = "#" + i;
-
-    }
-
-
-    used[ch] =
-      true;
-
-    out[name] =
-      ch;
-
-  });
-
-
-  return out;
+  return days;
 
 }
 
 
-function deepWeekLines(commits, days, letters) {
+function deepWeekCells(commits, days, slotMin) {
 
-  const L = [];
+  const per =
+    Math.round(24 * 60 / slotMin);
 
-  const grid =
-    days.map(() => new Array(24).fill("."));
+  const slotMs =
+    slotMin * 60000;
+
+  const rows =
+    days.map(() => new Array(per).fill(0));
 
 
   /*
     Normal first, deep second so deep wins
-    overlapping hours.
+    overlapping slots.
   */
   [false, true].forEach(isDeep => {
 
@@ -792,27 +757,22 @@ function deepWeekLines(commits, days, letters) {
       const end =
         start + durMs;
 
-      const ch =
-        letters[c.project] || "?";
-
 
       days.forEach((ds, di) => {
 
-        for (let h = 0; h < 24; h++) {
+        for (let s = 0; s < per; s++) {
 
-          const hs =
-            ds + h * 3600000;
+          const ss =
+            ds + s * slotMs;
 
-          const he =
-            hs + 3600000;
+          const se =
+            ss + slotMs;
 
 
-          if (start < he && end > hs) {
+          if (start < se && end > ss) {
 
-            grid[di][h] =
-              isDeep
-                ? ch.toUpperCase()
-                : ch;
+            rows[di][s] =
+              isDeep ? 2 : 1;
 
           }
 
@@ -825,8 +785,24 @@ function deepWeekLines(commits, days, letters) {
   });
 
 
+  return rows;
+
+}
+
+
+function deepWeekLines(commits, days) {
+
+  const L = [];
+
+  const glyph =
+    ["·", "●", "◆"];
+
+  const rows =
+    deepWeekCells(commits, days, 60);
+
+
   L.push(
-    "DEEP WEEK — 1 char = 1h · UPPER = deep work"
+    "DEEP WEEK — 1 char = 1h"
   );
 
 
@@ -853,30 +829,29 @@ function deepWeekLines(commits, days, letters) {
       " " +
       dayLabel(ds).slice(3) +
       " " +
-      grid[di].join("")
+      rows[di].map(v => glyph[v]).join("")
     );
 
   });
 
 
-  const names =
-    Object.keys(letters).sort();
-
   L.push(
-    "LEGEND " +
-    names
-      .map(n => letters[n] + "=" + n)
-      .join("  ")
+    "LEGEND ● work · empty ◆ deep"
   );
 
 
+  const inWin =
+    commits.filter(
+      c => c.t >= days[0]
+    );
+
   const deepMin =
-    commits
+    inWin
       .filter(c => c.deep && c.durationMin)
       .reduce((a, c) => a + c.durationMin, 0);
 
   const deepN =
-    commits.filter(c => c.deep).length;
+    inWin.filter(c => c.deep).length;
 
   const deepH =
     (deepMin / 60).toFixed(1).replace(/\.0$/, "");
@@ -934,15 +909,12 @@ function buildReport(projects, nowMs) {
   }
 
 
-  const todayStart = dayStartMs(nowMs);
+  const todayStart =
+    dayStartMs(nowMs);
 
-  const days = [];
 
-  for (let i = 6; i >= 0; i--) {
-
-    days.push(todayStart - i * 86400000);
-
-  }
+  const days =
+    last7Days(nowMs);
 
 
   const dayStats =
@@ -1254,15 +1226,9 @@ function buildReport(projects, nowMs) {
 
   /* ---------- 6. deep week grid ---------- */
 
-  const gridNames =
-    names.filter(n =>
-      commits.some(c => c.project === n)
-    );
-
   deepWeekLines(
     commits,
-    days,
-    projectLetters(gridNames)
+    days
   ).forEach(line => L.push(line));
 
   L.push("");
@@ -1307,7 +1273,9 @@ if (
 
     quietStreak,
 
-    projectLetters,
+    last7Days,
+
+    deepWeekCells,
 
     deepWeekLines,
 

@@ -103,6 +103,97 @@
       color: #555;
     }
 
+    /* DEEP WEEK dot grid — black = work,
+       light = empty, red = deep work */
+    .deepweek-section {
+      margin: 6px 0 28px 0;
+    }
+
+    .deepweek-title {
+      font-size: 12px;
+      letter-spacing: 0.12em;
+      margin-bottom: 12px;
+    }
+
+    .dw-row {
+      display: flex;
+      align-items: center;
+      margin-bottom: 4px;
+    }
+
+    .dw-label {
+      width: 58px;
+      flex: none;
+      font-family:
+        "Courier New",
+        Courier,
+        monospace;
+      font-size: 10px;
+      color: #777;
+    }
+
+    .dw-dots {
+      display: flex;
+      gap: 2px;
+    }
+
+    .dw-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      flex: none;
+    }
+
+    .dw-empty { background: #e3ded2; }
+    .dw-work { background: #1c1c1c; }
+    .dw-deep { background: #c93a2e; }
+
+    .dw-axis {
+      display: flex;
+      align-items: flex-end;
+      margin-bottom: 6px;
+    }
+
+    .dw-axis .dw-label {
+      color: transparent;
+    }
+
+    .dw-tick {
+      width: 7px;
+      flex: none;
+      font-family:
+        "Courier New",
+        Courier,
+        monospace;
+      font-size: 8px;
+      color: #999;
+      text-align: left;
+      margin-right: 2px;
+    }
+
+    .deepweek-legend {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      color: #555;
+      margin-top: 12px;
+      flex-wrap: wrap;
+    }
+
+    .deepweek-legend .dw-dot {
+      margin-left: 8px;
+    }
+
+    .deepweek-legend .dw-dot:first-child {
+      margin-left: 0;
+    }
+
+    .deepweek-total {
+      margin-left: 8px;
+      color: #1c1c1c;
+    }
+
     .footer {
       text-align: center;
       font-size: 11px;
@@ -125,6 +216,18 @@
   <main>
     <pre id="reportPre">loading…</pre>
 
+    <section id="deepweekSection" class="deepweek-section" hidden>
+      <div class="deepweek-title">DEEP WEEK</div>
+      <div id="deepWeekAxis" class="dw-axis"></div>
+      <div id="deepWeekGrid"></div>
+      <div class="deepweek-legend">
+        <span class="dw-dot dw-work"></span> work
+        <span class="dw-dot dw-empty"></span> empty
+        <span class="dw-dot dw-deep"></span> deep
+        <span id="deepWeekTotal" class="deepweek-total"></span>
+      </div>
+    </section>
+
     <div class="report-actions">
       <button id="copyButton" class="copy-button">
         COPY WEEK DATA
@@ -137,7 +240,7 @@
     ALL WORK AND NO PLAY MAKES ME A LLUD GIRL
   </footer>
 
-  <script src="report.js?v=2"></script>
+  <script src="report.js?v=3"></script>
   <script>
 
     (function () {
@@ -182,15 +285,201 @@
       }
 
 
+      var projects =
+        loadProjects();
+
+      var nowMs =
+        Date.now();
+
       var reportText =
-        buildReport(loadProjects(), Date.now());
+        buildReport(projects, nowMs);
 
 
       var pre =
         document.getElementById("reportPre");
 
 
-      pre.textContent = reportText;
+      /*
+        The text grid is replaced by the dot grid
+        on web; the full text (with grid) is still
+        what COPY WEEK DATA copies.
+      */
+      pre.textContent =
+        reportText.replace(
+          /\nDEEP WEEK — 1 char = 1h[\s\S]*?\nDEEP [^\n]* sessions\n/,
+          "\n"
+        );
+
+
+      renderDeepWeek(projects, nowMs);
+
+
+      function renderDeepWeek(projects, nowMs) {
+
+        var section =
+          document.getElementById("deepweekSection");
+
+
+        var commits =
+          collectCommits(projects, nowMs);
+
+
+        if (!commits.length) {
+
+          return;
+
+        }
+
+
+        var days =
+          last7Days(nowMs);
+
+        var rows =
+          deepWeekCells(commits, days, 30);
+
+        var cls =
+          ["dw-empty", "dw-work", "dw-deep"];
+
+
+        var axis =
+          document.getElementById("deepWeekAxis");
+
+        var axisLabel =
+          document.createElement("div");
+
+        axisLabel.className =
+          "dw-label";
+
+        axisLabel.textContent =
+          " ";
+
+        axis.appendChild(axisLabel);
+
+
+        var marks =
+          {0: "0", 12: "6", 24: "12", 36: "18"};
+
+
+        for (var s = 0; s < 48; s++) {
+
+          var tick =
+            document.createElement("div");
+
+          tick.className =
+            "dw-tick";
+
+          tick.textContent =
+            marks[s] || "";
+
+          axis.appendChild(tick);
+
+        }
+
+
+        var grid =
+          document.getElementById("deepWeekGrid");
+
+        var dayNames =
+          ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+
+        days.forEach(function (ds, di) {
+
+          var row =
+            document.createElement("div");
+
+          row.className =
+            "dw-row";
+
+
+          var label =
+            document.createElement("div");
+
+          label.className =
+            "dw-label";
+
+
+          var d =
+            new Date(ds);
+
+          label.textContent =
+            dayNames[d.getDay()] + " " +
+            ("0" + (d.getMonth() + 1)).slice(-2) + "-" +
+            ("0" + d.getDate()).slice(-2);
+
+
+          row.appendChild(label);
+
+
+          var dots =
+            document.createElement("div");
+
+          dots.className =
+            "dw-dots";
+
+
+          rows[di].forEach(function (v) {
+
+            var dot =
+              document.createElement("div");
+
+            dot.className =
+              "dw-dot " + cls[v];
+
+            dots.appendChild(dot);
+
+          });
+
+
+          row.appendChild(dots);
+
+          grid.appendChild(row);
+
+        });
+
+
+        var deepMin =
+          0;
+
+        var deepN =
+          0;
+
+
+        commits.forEach(function (c) {
+
+          if (c.t >= days[0] && c.deep) {
+
+            deepN++;
+
+
+            if (c.durationMin) {
+
+              deepMin +=
+                c.durationMin;
+
+            }
+
+          }
+
+        });
+
+
+        var h =
+          (deepMin / 60)
+            .toFixed(1)
+            .replace(/\.0$/, "");
+
+
+        document
+          .getElementById("deepWeekTotal")
+          .textContent =
+            h + "h deep · " + deepN + " sessions";
+
+
+        section.hidden =
+          false;
+
+      }
 
 
       var copyMsg =
