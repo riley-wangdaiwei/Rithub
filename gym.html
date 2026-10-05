@@ -153,11 +153,17 @@
       <button class="plain-button" id="exportBtn">EXPORT JSON</button>
       <label class="plain-button">IMPORT JSON<input type="file" id="importFile" accept=".json" hidden></label>
     </div>
+    <div class="row-label" style="margin-top:18px">CLOUD SYNC</div>
+    <p class="hint">Reuses the token + gist from the Rithub tracker home page (same login on this browser) — nothing to paste here. Phone and computer sync through gym.json in that gist.</p>
+    <div style="display:flex;gap:18px;margin-top:8px;align-items:baseline">
+      <button class="plain-button" id="gymSyncBtn">SYNC NOW</button>
+      <span class="msg" id="gymSyncMsg" style="margin-top:0"></span>
+    </div>
     <button class="plain-button danger" id="clearBtn">DELETE ALL GYM DATA</button>
   </main>
 
   <footer class="footer">ALL WORK AND NO PLAY MAKES ME A LLUD GIRL</footer>
 
-  <script src="gym.js?v=6"></script>
+  <script src="gym.js?v=7"></script>
 </body>
 </html>

@@ -43,13 +43,28 @@ function defaultState() {
 var state;
 try { state = JSON.parse(localStorage.getItem(STORE_KEY)) || defaultState(); }
 catch (e) { state = defaultState(); }
-if (!state.settings) state = defaultState();
-Object.keys(DEFAULT_EXERCISES).forEach(function (id) {
-  if (!state.settings.exercises[id])
-    state.settings.exercises[id] = JSON.parse(JSON.stringify(DEFAULT_EXERCISES[id]));
-});
+function ensureExerciseDefaults() {
+  if (!state.settings) state = defaultState();
+  Object.keys(DEFAULT_EXERCISES).forEach(function (id) {
+    if (!state.settings.exercises[id])
+      state.settings.exercises[id] = JSON.parse(JSON.stringify(DEFAULT_EXERCISES[id]));
+  });
+}
+ensureExerciseDefaults();
 
-function save() { localStorage.setItem(STORE_KEY, JSON.stringify(state)); }
+var GYM_UPDATED_KEY = 'rithub-gym-updated';
+try { var gymUpdatedAt = localStorage.getItem(GYM_UPDATED_KEY) || null; }
+catch (e) { var gymUpdatedAt = null; }
+
+function persistGym() {
+  localStorage.setItem(STORE_KEY, JSON.stringify(state));
+  if (gymUpdatedAt) { try { localStorage.setItem(GYM_UPDATED_KEY, gymUpdatedAt); } catch (e) {} }
+}
+function save() {
+  gymUpdatedAt = new Date().toISOString();
+  persistGym();
+  gymSchedulePush();
+}
 function ex(id) { return state.settings.exercises[id]; }
 function round2(n) { return Math.round(n * 100) / 100; }
 function pad(s, n) { s = String(s); while (s.length < n) s += ' '; return s; }
@@ -431,6 +446,7 @@ document.getElementById('retentionInput').addEventListener('change', function (e
   var v = parseInt(e.target.value, 10);
   if (v >= 7 && v <= 365) { state.settings.retentionDays = v; save(); }
 });
+document.getElementById('gymSyncBtn').addEventListener('click', function () { gymSyncNow(); });
 document.getElementById('exportBtn').addEventListener('click', function () {
   var blob = new Blob([JSON.stringify(state, null, 2)], { type:'application/json' });
   var a = document.createElement('a');
@@ -455,10 +471,121 @@ document.getElementById('clearBtn').addEventListener('click', function () {
     { state = defaultState(); save(); renderAll(); }
 });
 
+/* ---------- 05 cloud sync ----------
+   Reuses the Rithub tracker's token + gist id (same origin, shared
+   localStorage key 'rithub-cloud'); gym data lives in gym.json
+   inside that same gist, so the tracker's rithub.json is untouched. */
+var GYM_SYNC_META_KEY = 'rithub-gym-cloud-meta';
+var GYM_GIST_FILE = 'gym.json';
+var gymPushTimer = null;
+
+function gymCloudConfig() {
+  try { return JSON.parse(localStorage.getItem('rithub-cloud')); }
+  catch (e) { return null; }
+}
+function gymSyncMeta() {
+  try { return JSON.parse(localStorage.getItem(GYM_SYNC_META_KEY)) || {}; }
+  catch (e) { return {}; }
+}
+function setGymSyncMeta(patch) {
+  var meta = gymSyncMeta();
+  Object.keys(patch).forEach(function (k) { meta[k] = patch[k]; });
+  try { localStorage.setItem(GYM_SYNC_META_KEY, JSON.stringify(meta)); } catch (e) {}
+}
+function gymSetStatus(t) {
+  var el = document.getElementById('gymSyncMsg');
+  if (el) el.textContent = t;
+}
+async function gymGhApi(path, token, options) {
+  options = options || {};
+  var res = await fetch('https://api.github.com' + path, {
+    method: options.method || 'GET',
+    headers: {
+      'Authorization': 'Bearer ' + token,
+      'Accept': 'application/vnd.github+json',
+      'Content-Type': 'application/json'
+    },
+    body: options.body ? JSON.stringify(options.body) : undefined
+  });
+  if (!res.ok) {
+    var detail = '';
+    try { var err = await res.json(); detail = err.message ? ' \u2014 ' + err.message : ''; }
+    catch (e) {}
+    throw new Error('GitHub ' + res.status + detail);
+  }
+  if (res.status === 204) return null;
+  return res.json();
+}
+function gymEnvelope() { return { updatedAt: gymUpdatedAt, data: state }; }
+async function gymFetchRemote(cfg) {
+  var gist = await gymGhApi('/gists/' + cfg.gistId, cfg.token);
+  var file = gist.files && gist.files[GYM_GIST_FILE];
+  if (!file || !file.content) return null;
+  try {
+    var data = JSON.parse(file.content);
+    if (data && data.data && data.data.settings && data.data.settings.exercises) return data;
+  } catch (e) {}
+  return null;
+}
+function gymAdoptRemote(remote) {
+  state = remote.data;
+  ensureExerciseDefaults();
+  gymUpdatedAt = remote.updatedAt;
+  persistGym();
+  setGymSyncMeta({ lastSyncAt: remote.updatedAt });
+  renderAll();
+}
+async function gymPushEnvelope(cfg) {
+  var meta = gymSyncMeta();
+  var remote = await gymFetchRemote(cfg);
+  if (remote && remote.updatedAt && gymUpdatedAt && remote.updatedAt > gymUpdatedAt &&
+      (!meta.lastSyncAt || remote.updatedAt > meta.lastSyncAt)) {
+    gymAdoptRemote(remote);
+    return 'pulled';
+  }
+  var files = {};
+  files[GYM_GIST_FILE] = { content: JSON.stringify(gymEnvelope()) };
+  await gymGhApi('/gists/' + cfg.gistId, cfg.token,
+    { method: 'PATCH', body: { files: files } });
+  setGymSyncMeta({ lastSyncAt: gymUpdatedAt });
+  return 'pushed';
+}
+function gymSchedulePush() {
+  if (!gymCloudConfig()) return;
+  if (gymPushTimer) clearTimeout(gymPushTimer);
+  gymSetStatus('syncing\u2026');
+  gymPushTimer = setTimeout(async function () {
+    try {
+      var r = await gymPushEnvelope(gymCloudConfig());
+      gymSetStatus(r === 'pulled' ? 'pulled newer cloud copy' : 'synced');
+    } catch (e) { gymSetStatus('sync failed: ' + e.message); }
+  }, 2000);
+}
+async function gymSyncNow() {
+  var cfg = gymCloudConfig();
+  if (!cfg || !cfg.token || !cfg.gistId) {
+    gymSetStatus('not configured \u2014 set up sync on the Rithub home page first');
+    return 'unconfigured';
+  }
+  gymSetStatus('syncing\u2026');
+  try {
+    var remote = await gymFetchRemote(cfg);
+    if (!remote) { await gymPushEnvelope(cfg); gymSetStatus('pushed'); return 'pushed'; }
+    if (remote.updatedAt && (!gymUpdatedAt || remote.updatedAt > gymUpdatedAt)) {
+      gymAdoptRemote(remote); gymSetStatus('pulled'); return 'pulled';
+    }
+    if (gymUpdatedAt && remote.updatedAt && gymUpdatedAt > remote.updatedAt) {
+      await gymPushEnvelope(cfg); gymSetStatus('pushed'); return 'pushed';
+    }
+    gymSetStatus('up to date'); return 'up to date';
+  } catch (e) { gymSetStatus('sync failed: ' + e.message); return 'failed'; }
+}
+
 /* ---------- init ---------- */
 function renderAll() { syncDayTabs(); renderTodayLine(); renderLog(); renderProgress(); renderGoals(); renderSettings(); }
 document.getElementById('logDate').value = todayStr();
 renderGoalEditor();
 renderAll();
+gymSyncNow();
 
 })();
