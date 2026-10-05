@@ -114,14 +114,6 @@ const WAKE_END = 24;    /* 24:00, exclusive */
 const DEEP_START_MIN = 21 * 60;        /* 21:00 */
 const DEEP_END_MIN = 22 * 60 + 30;     /* 22:30 */
 
-/*
-   Fixed daily template (Riles's framework).
-   One char per hour, index = hour of day.
-   r=reading s=startup c=courses g=grow W=deep ·=rest
-*/
-const PLAN_ROW =
-  "        rssr·cccgg···WW·";
-
 const MONTHS =
   ["JAN","FEB","MAR","APR","MAY","JUN",
    "JUL","AUG","SEP","OCT","NOV","DEC"];
@@ -790,6 +782,67 @@ function deepWeekCells(commits, days, slotMin) {
 }
 
 
+/*
+   Deep-week rates, shared by the text footer and
+   the web dot grid.
+*/
+function deepWeekStats(commits, days) {
+
+  const inWin =
+    commits.filter(
+      c => c.t >= days[0]
+    );
+
+
+  const deepMin =
+    inWin
+      .filter(c => c.deep && c.durationMin)
+      .reduce((a, c) => a + c.durationMin, 0);
+
+  const totalMin =
+    inWin
+      .filter(c => c.durationMin)
+      .reduce((a, c) => a + c.durationMin, 0);
+
+  const sessions =
+    inWin.filter(c => c.deep).length;
+
+  const nights =
+    days.filter(ds =>
+      inWin.some(
+        c =>
+          c.deep &&
+          c.t >= ds &&
+          c.t < ds + 86400000
+      )
+    ).length;
+
+
+  const fmtH =
+    m =>
+      (m / 60).toFixed(1).replace(/\.0$/, "");
+
+
+  return {
+
+    deepH: fmtH(deepMin),
+
+    totalH: fmtH(totalMin),
+
+    share:
+      totalMin > 0
+        ? Math.round(deepMin / totalMin * 100) + "%"
+        : "—",
+
+    sessions: sessions,
+
+    nights: nights
+
+  };
+
+}
+
+
 function deepWeekLines(commits, days) {
 
   const L = [];
@@ -840,26 +893,15 @@ function deepWeekLines(commits, days) {
   );
 
 
-  const inWin =
-    commits.filter(
-      c => c.t >= days[0]
-    );
-
-  const deepMin =
-    inWin
-      .filter(c => c.deep && c.durationMin)
-      .reduce((a, c) => a + c.durationMin, 0);
-
-  const deepN =
-    inWin.filter(c => c.deep).length;
-
-  const deepH =
-    (deepMin / 60).toFixed(1).replace(/\.0$/, "");
+  const st =
+    deepWeekStats(commits, days);
 
 
   L.push(
-    "DEEP " + deepH + "h this week · " +
-    deepN + " sessions"
+    "DEEP " + st.deepH + "h / " + st.totalH + "h" +
+    " (" + st.share + ")" +
+    " · " + st.sessions + " sessions" +
+    " · " + st.nights + "/7 nights"
   );
 
 
@@ -1096,30 +1138,6 @@ function buildReport(projects, nowMs) {
   L.push("");
 
 
-  /* ---------- 2. today timeline ---------- */
-
-  L.push("TODAY TIMELINE");
-
-  L.push("        " + hourAxis());
-
-  L.push("plan    " + PLAN_ROW);
-
-  L.push(
-    "tick    " +
-    Array.from(
-      { length: 24 },
-      (_, h) => hourCovered(h, tStat) ? "●" : "·"
-    ).join("")
-  );
-
-  L.push(
-    " r=reading s=startup c=courses " +
-    "g=grow W=deep ·=rest"
-  );
-
-  L.push("");
-
-
   /* ---------- 3. gap trend ---------- */
 
   L.push("GAP TREND — blank hrs/day (wake 08–24)");
@@ -1215,16 +1233,7 @@ function buildReport(projects, nowMs) {
   L.push("");
 
 
-  /* ---------- 5. deep-water start rate ---------- */
-
-  L.push("DEEP WATER 21:00–22:30 — started?");
-
-  L.push(strip7 + "   " + startRate + "%");
-
-  L.push("");
-
-
-  /* ---------- 6. deep week grid ---------- */
+  /* ---------- 5. deep week grid ---------- */
 
   deepWeekLines(
     commits,
@@ -1277,6 +1286,8 @@ if (
 
     deepWeekCells,
 
+    deepWeekStats,
+
     deepWeekLines,
 
     weekdayShort,
@@ -1286,8 +1297,6 @@ if (
     timerElapsedMin,
 
     formatElapsed,
-
-    PLAN_ROW,
 
     WAKE_START,
 

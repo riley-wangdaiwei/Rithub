@@ -240,7 +240,7 @@
     ALL WORK AND NO PLAY MAKES ME A LLUD GIRL
   </footer>
 
-  <script src="report.js?v=3"></script>
+  <script src="report.js?v=4"></script>
   <script>
 
     (function () {
@@ -306,7 +306,7 @@
       */
       pre.textContent =
         reportText.replace(
-          /\nDEEP WEEK — 1 char = 1h[\s\S]*?\nDEEP [^\n]* sessions\n/,
+          /\nDEEP WEEK — 1 char = 1h[\s\S]*?\n\n(?=rules:)/,
           "\n"
         );
 
@@ -438,42 +438,17 @@
         });
 
 
-        var deepMin =
-          0;
-
-        var deepN =
-          0;
-
-
-        commits.forEach(function (c) {
-
-          if (c.t >= days[0] && c.deep) {
-
-            deepN++;
-
-
-            if (c.durationMin) {
-
-              deepMin +=
-                c.durationMin;
-
-            }
-
-          }
-
-        });
-
-
-        var h =
-          (deepMin / 60)
-            .toFixed(1)
-            .replace(/\.0$/, "");
+        var st =
+          deepWeekStats(commits, days);
 
 
         document
           .getElementById("deepWeekTotal")
           .textContent =
-            h + "h deep · " + deepN + " sessions";
+            st.deepH + "h / " + st.totalH + "h" +
+            " (" + st.share + ")" +
+            " · " + st.sessions + " sessions" +
+            " · " + st.nights + "/7 nights";
 
 
         section.hidden =
