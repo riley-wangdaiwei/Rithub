@@ -185,15 +185,30 @@ function renderLog() {
         '<span class="setcol">WEIGHT (LB)</span>' +
         '<span class="setcol">REPS</span>' +
         '<label class="setsctrl"><span>SETS</span>' +
-        '<input type="number" min="1" max="10" data-nsets="' + id + '" value="' + (setCounts[id] || cfg.sets) + '"></label>' +
+        '<button type="button" class="stepbtn" data-step="-1">\u2212</button>' +
+        '<input type="number" min="1" max="10" data-nsets="' + id + '" value="' + (setCounts[id] || cfg.sets) + '">' +
+        '<button type="button" class="stepbtn" data-step="1">+</button></label>' +
       '</div>' +
       '<div class="exsets"></div>';
     list.appendChild(div);
     renderSetRows(div, id);
+    function applySets(nv) {
+      if (nv >= 1 && nv <= 10) {
+        setCounts[id] = nv;
+        div.querySelector('[data-nsets]').value = nv;
+        renderSetRows(div, id);
+      } else {
+        div.querySelector('[data-nsets]').value = setCounts[id] || cfg.sets;
+      }
+    }
     div.querySelector('[data-nsets]').addEventListener('change', function (e) {
-      var nv = parseInt(e.target.value, 10);
-      if (nv >= 1 && nv <= 10) { setCounts[id] = nv; renderSetRows(div, id); }
-      else e.target.value = setCounts[id] || cfg.sets;
+      applySets(parseInt(e.target.value, 10));
+    });
+    Array.prototype.forEach.call(div.querySelectorAll('[data-step]'), function (btn) {
+      btn.addEventListener('click', function () {
+        var cur = setCounts[id] || cfg.sets;
+        applySets(cur + parseInt(btn.dataset.step, 10));
+      });
     });
   });
 }

@@ -72,6 +72,12 @@
     .exsetrow input[type="number"] { width: 90px; }
     .setsctrl { margin-left: auto; display: flex; align-items: center; gap: 8px; font-size: 9px; color: #777; letter-spacing: 0.12em; }
     .setsctrl input[type="number"] { width: 52px; }
+    .stepbtn {
+      border: 1px solid #777; background: transparent; color: #151515;
+      font-family: inherit; font-size: 14px; width: 30px; height: 30px;
+      line-height: 1; padding: 0; cursor: pointer; border-radius: 0;
+    }
+    .stepbtn:active { background: #151515; color: #f7f4ec; }
     .black-button {
       border: 1px solid #151515; background: #151515; color: #f7f4ec;
       padding: 10px 18px; font-family: inherit; font-size: 12px;
@@ -114,7 +120,7 @@
         <button data-day="legs">LEGS</button>
       </div>
     </div>
-    <p class="hint">Dumbbell weights are per dumbbell. Fill weight + reps for every set; change SETS to add rows.</p>
+    <p class="hint">Dumbbell weights are per dumbbell. Fill weight + reps for every set; tap + / − by SETS to add or remove rows.</p>
     <div id="todayLine" class="todayline"></div>
     <div id="exerciseList"></div>
     <button id="saveBtn" class="black-button">SAVE WORKOUT</button>
@@ -152,6 +158,6 @@
 
   <footer class="footer">ALL WORK AND NO PLAY MAKES ME A LLUD GIRL</footer>
 
-  <script src="gym.js?v=3"></script>
+  <script src="gym.js?v=4"></script>
 </body>
 </html>
