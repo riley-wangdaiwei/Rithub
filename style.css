@@ -1076,3 +1076,60 @@ textarea:focus {
   color: #9b0000;
 
 }
+
+
+/* DEEP toggle (project timer) */
+
+.deep-toggle-button {
+
+  border:
+    1px solid #b9b2a4;
+
+  background: transparent;
+
+  color: #8a8474;
+
+  padding:
+    8px 14px;
+
+  font-family: inherit;
+
+  font-size: 11px;
+
+  letter-spacing:
+    0.05em;
+
+  cursor: pointer;
+
+  white-space: nowrap;
+
+}
+
+
+.deep-toggle-button.on {
+
+  border-color: #1a3a1a;
+
+  background: #1a3a1a;
+
+  color: #f7f4ec;
+
+}
+
+
+.deep-toggle-button:disabled {
+
+  opacity: 0.35;
+
+  cursor: default;
+
+}
+
+
+.deep-tag {
+
+  color: #1a3a1a;
+
+  font-weight: bold;
+
+}

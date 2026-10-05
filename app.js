@@ -2043,7 +2043,8 @@ function startQuickTodoTimer(id) {
 
   startTimer(
     INBOX_ID,
-    { id: item.id, text: item.text }
+    { id: item.id, text: item.text },
+    false
   );
 
 
@@ -2780,6 +2781,25 @@ function renderHistory(project) {
 
           }
 
+
+          ${
+
+            commit.deep
+
+              ? `
+
+                <span class="deep-tag">
+
+                  · DEEP
+
+                </span>
+
+              `
+
+              : ""
+
+          }
+
         </div>
 
         <button
@@ -3091,6 +3111,14 @@ document
       }
 
 
+      if (pendingDeep) {
+
+        commit.deep =
+          true;
+
+      }
+
+
       project.commits.push(
         commit
       );
@@ -3100,6 +3128,8 @@ document
 
 
       pendingDurationMin = null;
+
+      pendingDeep = false;
 
       refreshTimerNote();
 
@@ -3511,6 +3541,19 @@ let activeTimer =
 let pendingDurationMin =
   null;
 
+
+/*
+   DEEP mode: armed by the DEEP toggle in project
+   view. The NEXT timer started while armed is
+   flagged deep; the flag lands on the commit and
+   disarms after stop. Quick todos never go deep.
+*/
+let deepMode =
+  false;
+
+let pendingDeep =
+  false;
+
 let timerTickId =
   null;
 
@@ -3689,6 +3732,11 @@ function refreshTimerUI() {
           ? " · " +
             activeTimer.todoText.slice(0, 24)
           : ""
+      ) +
+      (
+        activeTimer.deep
+          ? " · DEEP"
+          : ""
       );
 
     badge.classList.remove(
@@ -3702,6 +3750,9 @@ function refreshTimerUI() {
     );
 
   }
+
+
+  refreshDeepToggle();
 
 }
 
@@ -3817,7 +3868,8 @@ function tickTimer() {
 
 function startTimer(
   projectId,
-  todo
+  todo,
+  deep
 ) {
 
   if (activeTimer) {
@@ -3833,7 +3885,12 @@ function startTimer(
       projectId,
 
     startedAt:
-      new Date().toISOString()
+      new Date().toISOString(),
+
+    deep:
+      deep !== undefined
+        ? !!deep
+        : deepMode
 
   };
 
@@ -3877,11 +3934,27 @@ function stopTimerForCommit() {
     activeTimer.todoText;
 
 
+  const timerDeep =
+    !!activeTimer.deep;
+
+
   pendingDurationMin =
     timerElapsedMin(
       activeTimer.startedAt,
       Date.now()
     );
+
+
+  pendingDeep =
+    timerDeep;
+
+
+  /*
+    The deep flag disarms after every stop —
+    each deep session is armed deliberately.
+  */
+  deepMode =
+    false;
 
 
   activeTimer =
@@ -3890,6 +3963,8 @@ function stopTimerForCommit() {
   persistTimer();
 
   refreshTimerUI();
+
+  refreshDeepToggle();
 
   refreshTimerNote();
 
@@ -3998,6 +4073,14 @@ function stopTimerForCommit() {
     }
 
 
+    if (timerDeep) {
+
+      commit.deep =
+        true;
+
+    }
+
+
     timerProject.commits.push(
       commit
     );
@@ -4005,6 +4088,10 @@ function stopTimerForCommit() {
 
     pendingDurationMin =
       null;
+
+
+    pendingDeep =
+      false;
 
 
     save();
@@ -4087,7 +4174,11 @@ function refreshTimerNote() {
 
     text.textContent =
       pendingDurationMin +
-      " MIN WILL BE ATTACHED";
+      (
+        pendingDeep
+          ? " MIN · DEEP WILL BE ATTACHED"
+          : " MIN WILL BE ATTACHED"
+      );
 
     note.classList.remove(
       "hidden"
@@ -4102,6 +4193,74 @@ function refreshTimerNote() {
   }
 
 }
+
+
+function refreshDeepToggle() {
+
+  const button =
+    document.getElementById(
+      "deepToggle"
+    );
+
+
+  if (!button) {
+
+    return;
+
+  }
+
+
+  /*
+    While a timer runs, the toggle mirrors the
+    running session and can't be changed.
+  */
+  const on =
+    activeTimer
+      ? !!activeTimer.deep
+      : deepMode;
+
+
+  button.textContent =
+    on ? "DEEP · ON" : "DEEP";
+
+
+  button.classList.toggle(
+    "on",
+    on
+  );
+
+
+  button.disabled =
+    !!activeTimer;
+
+}
+
+
+document
+  .getElementById(
+    "deepToggle"
+  )
+  .addEventListener(
+
+    "click",
+
+    () => {
+
+      if (activeTimer) {
+
+        return;
+
+      }
+
+
+      deepMode =
+        !deepMode;
+
+      refreshDeepToggle();
+
+    }
+
+  );
 
 
 document
@@ -4215,6 +4374,9 @@ document
 
       pendingDurationMin =
         null;
+
+      pendingDeep =
+        false;
 
       refreshTimerNote();
 

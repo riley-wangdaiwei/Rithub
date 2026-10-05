@@ -226,7 +226,9 @@ function collectCommits(projects, nowMs) {
 
         project: String(p.name || "?"),
 
-        durationMin: dur
+        durationMin: dur,
+
+        deep: !!c.deep
 
       });
 
@@ -678,6 +680,219 @@ function hourAxis() {
 }
 
 
+/*
+   DEEP WEEK grid — 7 rows x 24 columns, 1 char = 1h.
+   Each project gets one letter (first free letter of
+   its name); lowercase = normal work, UPPERCASE =
+   deep work. Deep cells overwrite normal ones.
+*/
+function weekdayShort(ms) {
+
+  return (
+    ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+      [new Date(ms).getDay()]
+  );
+
+}
+
+
+function projectLetters(names) {
+
+  const used = {};
+
+  const out = {};
+
+  const sorted =
+    names.slice().sort();
+
+
+  sorted.forEach(name => {
+
+    const low =
+      String(name).toLowerCase();
+
+    let ch =
+      null;
+
+
+    for (const c of low) {
+
+      if (
+        /[a-z0-9]/.test(c) &&
+        !used[c]
+      ) {
+
+        ch = c;
+
+        break;
+
+      }
+
+    }
+
+
+    if (!ch) {
+
+      let i = 0;
+
+      while (used["#" + i]) {
+
+        i++;
+
+      }
+
+      ch = "#" + i;
+
+    }
+
+
+    used[ch] =
+      true;
+
+    out[name] =
+      ch;
+
+  });
+
+
+  return out;
+
+}
+
+
+function deepWeekLines(commits, days, letters) {
+
+  const L = [];
+
+  const grid =
+    days.map(() => new Array(24).fill("."));
+
+
+  /*
+    Normal first, deep second so deep wins
+    overlapping hours.
+  */
+  [false, true].forEach(isDeep => {
+
+    commits.forEach(c => {
+
+      if (!!c.deep !== isDeep) {
+
+        return;
+
+      }
+
+
+      const durMs =
+        (c.durationMin || 60) * 60000;
+
+      const start =
+        c.t;
+
+      const end =
+        start + durMs;
+
+      const ch =
+        letters[c.project] || "?";
+
+
+      days.forEach((ds, di) => {
+
+        for (let h = 0; h < 24; h++) {
+
+          const hs =
+            ds + h * 3600000;
+
+          const he =
+            hs + 3600000;
+
+
+          if (start < he && end > hs) {
+
+            grid[di][h] =
+              isDeep
+                ? ch.toUpperCase()
+                : ch;
+
+          }
+
+        }
+
+      });
+
+    });
+
+  });
+
+
+  L.push(
+    "DEEP WEEK — 1 char = 1h · UPPER = deep work"
+  );
+
+
+  let axis =
+    " ".repeat(7 + 24);
+
+  [[0, "0"], [6, "6"], [12, "12"], [18, "18"]]
+    .forEach(([h, s]) => {
+
+      axis =
+        axis.substring(0, 7 + h) +
+        s +
+        axis.substring(7 + h + s.length);
+
+    });
+
+  L.push(axis);
+
+
+  days.forEach((ds, di) => {
+
+    L.push(
+      weekdayShort(ds) +
+      " " +
+      dayLabel(ds).slice(3) +
+      " " +
+      grid[di].join("")
+    );
+
+  });
+
+
+  const names =
+    Object.keys(letters).sort();
+
+  L.push(
+    "LEGEND " +
+    names
+      .map(n => letters[n] + "=" + n)
+      .join("  ")
+  );
+
+
+  const deepMin =
+    commits
+      .filter(c => c.deep && c.durationMin)
+      .reduce((a, c) => a + c.durationMin, 0);
+
+  const deepN =
+    commits.filter(c => c.deep).length;
+
+  const deepH =
+    (deepMin / 60).toFixed(1).replace(/\.0$/, "");
+
+
+  L.push(
+    "DEEP " + deepH + "h this week · " +
+    deepN + " sessions"
+  );
+
+
+  return L;
+
+}
+
+
 const RULE = "─".repeat(36);
 
 
@@ -1036,6 +1251,22 @@ function buildReport(projects, nowMs) {
 
   L.push("");
 
+
+  /* ---------- 6. deep week grid ---------- */
+
+  const gridNames =
+    names.filter(n =>
+      commits.some(c => c.project === n)
+    );
+
+  deepWeekLines(
+    commits,
+    days,
+    projectLetters(gridNames)
+  ).forEach(line => L.push(line));
+
+  L.push("");
+
   L.push(
     "rules: 90/20 ultradian · dip 13–15 · " +
     "sleep guard 00:30 · ~ = estimated"
@@ -1075,6 +1306,12 @@ if (
     maxZeroRun,
 
     quietStreak,
+
+    projectLetters,
+
+    deepWeekLines,
+
+    weekdayShort,
 
     timerElapsedMs,
 
