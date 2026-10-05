@@ -64,28 +64,55 @@ function sessionsFor(exId) {
 function entryIn(log, exId) {
   return log.entries.filter(function (e) { return e.ex === exId; })[0];
 }
+/*
+   Entry shape v2: { ex, sets:[{w, r}, ...] } — every set
+   carries its own weight + reps. v1 entries were
+   { ex, weight, sets:n, reps:[...] }; the helpers
+   below normalize both so old logs keep working.
+*/
+function entrySets(e) {
+  if (e.sets && Array.isArray(e.sets)) return e.sets;
+  var reps = e.reps || [];
+  var n = (typeof e.sets === 'number') ? e.sets : reps.length;
+  var out = [];
+  for (var i = 0; i < n; i++)
+    out.push({ w: (typeof e.weight === 'number' ? e.weight : null),
+               r: (reps[i] !== undefined ? reps[i] : null) });
+  return out;
+}
+function entryWeight(e) {
+  if (typeof e.weight === 'number') return e.weight;
+  var ws = entrySets(e).map(function (s) { return s.w; })
+    .filter(function (w) { return typeof w === 'number'; });
+  return ws.length ? Math.max.apply(null, ws) : null;
+}
+function entryReps(e) {
+  return entrySets(e).map(function (s) { return s.r; })
+    .filter(function (r) { return typeof r === 'number'; });
+}
 function suggest(exId) {
   var cfg = ex(exId), sess = sessionsFor(exId);
   if (!sess.length)
     return { weight:null, note:'first log — enter current weight', bump:false, stuck:0, last:null };
   var last = entryIn(sess[0], exId);
   var hi = cfg.reps[1], lo = cfg.reps[0];
-  var hitTop = last.reps.length >= cfg.sets &&
-    last.reps.every(function (r) { return r >= hi; });
+  var lastReps = entryReps(last), lastW = entryWeight(last);
+  var hitTop = lastReps.length >= cfg.sets &&
+    lastReps.every(function (r) { return r >= hi; });
   var stuck = 0;
   for (var i = 0; i < sess.length; i++) {
     var e = entryIn(sess[i], exId);
-    if (e && e.weight === last.weight) stuck++; else break;
+    if (e && entryWeight(e) === lastW) stuck++; else break;
   }
   if (cfg.mode === 'assist') {
-    if (hitTop) return { weight:round2(Math.max(0, last.weight - cfg.inc)),
+    if (hitTop) return { weight:round2(Math.max(0, lastW - cfg.inc)),
       note:'hit top — drop assistance by ' + cfg.inc + ' lb', bump:true, stuck:stuck, last:last };
-    return { weight:last.weight,
+    return { weight:lastW,
       note:'target ' + hi + ' reps x ' + cfg.sets + ', then drop assistance', bump:false, stuck:stuck, last:last };
   }
-  if (hitTop) return { weight:round2(last.weight + cfg.inc),
+  if (hitTop) return { weight:round2(lastW + cfg.inc),
     note:'hit top — add ' + cfg.inc + ' lb', bump:true, stuck:stuck, last:last };
-  return { weight:last.weight,
+  return { weight:lastW,
     note:'target ' + hi + ' reps x ' + cfg.sets + ', then add weight', bump:false, stuck:stuck, last:last };
 }
 
@@ -99,6 +126,7 @@ function nextUp() {
   return { day: ROTATION[(i + 1) % 3], lastDay: last.day, lastDate: last.date };
 }
 var curDay = (nextUp() || {}).day || 'push';
+var setCounts = {};   /* runtime per-exercise set rows; defaults to cfg.sets */
 
 function syncDayTabs() {
   Array.prototype.forEach.call(document.querySelectorAll('#dayTabs button'), function (x) {
@@ -113,13 +141,28 @@ function renderTodayLine() {
     : 'NEXT UP: -- · log one session to start the rotation';
 }
 
-function parseReps(str, sets) {
-  var parts = String(str || '').split(/[,，\s]+/)
-    .map(function (s) { return parseInt(s, 10); })
-    .filter(function (n) { return !isNaN(n) && n > 0; });
-  if (!parts.length) return [];
-  if (parts.length === 1) { var a = []; for (var i=0;i<sets;i++) a.push(parts[0]); return a; }
-  return parts;
+function renderSetRows(block, id) {
+  var n = setCounts[id] || ex(id).sets;
+  var wrap = block.querySelector('.exsets');
+  var vals = [];
+  Array.prototype.forEach.call(wrap.querySelectorAll('.exsetrow'), function (sr) {
+    vals.push({
+      w: sr.querySelector('[data-f="w"]').value,
+      r: sr.querySelector('[data-f="r"]').value
+    });
+  });
+  var sugW = suggest(id).weight;
+  var html = '';
+  for (var i = 0; i < n; i++) {
+    var v = vals[i] || {};
+    var w = (v.w !== undefined && v.w !== '') ? v.w : (sugW === null ? '' : sugW);
+    html += '<div class="exsetrow">' +
+      '<span class="setnum">' + (i + 1) + '</span>' +
+      '<input type="number" step="0.5" min="0" data-f="w" value="' + w + '" placeholder="lb">' +
+      '<input type="number" min="0" data-f="r" value="' + (v.r || '') + '" placeholder="reps">' +
+      '</div>';
+  }
+  wrap.innerHTML = html;
 }
 
 function renderLog() {
@@ -130,18 +173,28 @@ function renderLog() {
     var cfg = ex(id), s = suggest(id);
     var div = document.createElement('div');
     div.className = 'exblock';
+    var lastW = s.last ? entryWeight(s.last) : null;
     var sug = s.weight === null ? s.note :
       ('suggest ' + s.weight + ' lb · ' + s.note +
-       (s.stuck > 1 ? ' · ' + s.last.weight + ' lb for ' + s.stuck + ' sessions' : ''));
+       (s.stuck > 1 && lastW !== null ? ' · ' + lastW + ' lb for ' + s.stuck + ' sessions' : ''));
     div.innerHTML =
       '<div class="exname">' + cfg.name + '</div>' +
       '<div class="exsuggest' + (s.bump ? ' bump' : '') + '">' + sug + '</div>' +
-      '<div class="exinputs">' +
-        '<label><span class="row-label">WEIGHT (LB)</span><input type="number" step="0.5" min="0" data-ex="' + id + '" data-f="weight" value="' + (s.weight === null ? '' : s.weight) + '"></label>' +
-        '<label><span class="row-label">SETS</span><input type="number" min="1" max="10" data-ex="' + id + '" data-f="sets" value="' + cfg.sets + '"></label>' +
-        '<label><span class="row-label">REPS</span><input data-ex="' + id + '" data-f="reps" placeholder="10 or 10,10,8" style="width:130px"></label>' +
-      '</div>';
+      '<div class="sethead">' +
+        '<span class="setnum"></span>' +
+        '<span class="setcol">WEIGHT (LB)</span>' +
+        '<span class="setcol">REPS</span>' +
+        '<label class="setsctrl"><span>SETS</span>' +
+        '<input type="number" min="1" max="10" data-nsets="' + id + '" value="' + (setCounts[id] || cfg.sets) + '"></label>' +
+      '</div>' +
+      '<div class="exsets"></div>';
     list.appendChild(div);
+    renderSetRows(div, id);
+    div.querySelector('[data-nsets]').addEventListener('change', function (e) {
+      var nv = parseInt(e.target.value, 10);
+      if (nv >= 1 && nv <= 10) { setCounts[id] = nv; renderSetRows(div, id); }
+      else e.target.value = setCounts[id] || cfg.sets;
+    });
   });
 }
 
@@ -155,15 +208,16 @@ function recordBests(log) {
   var m = log.date.slice(0,7);
   if (!state.monthlyBests[m]) state.monthlyBests[m] = {};
   log.entries.forEach(function (e) {
-    var cfg = ex(e.ex), mb = state.monthlyBests[m];
+    var cfg = ex(e.ex), mb = state.monthlyBests[m], w = entryWeight(e);
+    if (w === null) return;
     if (cfg.mode === 'assist') {
-      if (!state.bests[e.ex] || e.weight < state.bests[e.ex].weight)
-        state.bests[e.ex] = { weight:e.weight, date:log.date };
-      if (mb[e.ex] === undefined || e.weight < mb[e.ex]) mb[e.ex] = e.weight;
+      if (!state.bests[e.ex] || w < state.bests[e.ex].weight)
+        state.bests[e.ex] = { weight:w, date:log.date };
+      if (mb[e.ex] === undefined || w < mb[e.ex]) mb[e.ex] = w;
     } else {
-      if (!state.bests[e.ex] || e.weight > state.bests[e.ex].weight)
-        state.bests[e.ex] = { weight:e.weight, date:log.date };
-      if (mb[e.ex] === undefined || e.weight > mb[e.ex]) mb[e.ex] = e.weight;
+      if (!state.bests[e.ex] || w > state.bests[e.ex].weight)
+        state.bests[e.ex] = { weight:w, date:log.date };
+      if (mb[e.ex] === undefined || w > mb[e.ex]) mb[e.ex] = w;
     }
   });
 }
@@ -172,12 +226,16 @@ document.getElementById('saveBtn').addEventListener('click', function () {
   var date = document.getElementById('logDate').value || todayStr();
   var entries = [];
   Array.prototype.forEach.call(document.querySelectorAll('#exerciseList .exblock'), function (row) {
-    var id = row.querySelector('[data-f="weight"]').dataset.ex;
-    var weight = parseFloat(row.querySelector('[data-f="weight"]').value);
-    var sets = parseInt(row.querySelector('[data-f="sets"]').value, 10) || ex(id).sets;
-    var reps = parseReps(row.querySelector('[data-f="reps"]').value, sets);
-    if (isNaN(weight)) return;
-    entries.push({ ex:id, weight:round2(weight), sets:sets, reps:reps });
+    var id = row.querySelector('[data-nsets]').dataset.nsets;
+    var sets = [];
+    Array.prototype.forEach.call(row.querySelectorAll('.exsetrow'), function (sr) {
+      var w = parseFloat(sr.querySelector('[data-f="w"]').value);
+      var r = parseInt(sr.querySelector('[data-f="r"]').value, 10);
+      if (isNaN(w)) return;
+      sets.push({ w:round2(w), r:(isNaN(r) ? null : r) });
+    });
+    if (!sets.length) return;
+    entries.push({ ex:id, sets:sets });
   });
   if (!entries.length) { flash('enter at least one weight'); return; }
   var log = { date:date, day:curDay, entries:entries };
@@ -209,10 +267,12 @@ function renderProgress() {
     out.push('  best    ' + (b ? b.weight + ' lb · ' + b.date.slice(5) : '--'));
     out.push('  next    ' + (s.weight === null ? 'log once first'
       : s.weight + ' lb x ' + cfg.sets + '  (' + s.note + ')'));
-    if (s.stuck > 1) out.push('  stuck   ' + s.last.weight + ' lb for ' + s.stuck + ' sessions');
+    if (s.stuck > 1) out.push('  stuck   ' + entryWeight(s.last) + ' lb for ' + s.stuck + ' sessions');
     sessionsFor(id).slice(0,3).forEach(function (l) {
       var e = entryIn(l, id);
-      out.push('  ' + l.date.slice(5) + '   ' + e.weight + ' x ' + e.sets + '  (' + e.reps.join(',') + ')');
+      out.push('  ' + l.date.slice(5) + '   ' + entrySets(e).map(function (st) {
+        return (st.w === null ? '?' : st.w) + 'x' + (st.r === null ? '?' : st.r);
+      }).join(', '));
     });
     out.push('');
   });
