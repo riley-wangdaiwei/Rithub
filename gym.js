@@ -3,7 +3,20 @@
 'use strict';
 
 var STORE_KEY = 'rithub-gym-v1';
-var GOAL_MONTHS = ['2026-08','2026-09','2026-10','2026-11','2026-12'];
+/* rolling goal months: 2 back + 5 forward, plus any month that already has goals */
+function goalMonths() {
+  var out = [], d = new Date();
+  d.setDate(1); d.setMonth(d.getMonth() - 2);
+  for (var i = 0; i < 8; i++) {
+    var m = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+    if (out.indexOf(m) < 0) out.push(m);
+    d.setMonth(d.getMonth() + 1);
+  }
+  Object.keys(state.goals || {}).forEach(function (m) {
+    if (out.indexOf(m) < 0) out.push(m);
+  });
+  return out.sort();
+}
 
 var DEFAULT_EXERCISES = {
   'db-incline':       { name:'Dumbbell incline chest',  days:['push'],        inc:2.5, reps:[8,12],  sets:3, mode:'std',    key:true  },
@@ -301,7 +314,7 @@ function renderGoals() {
   var head = pad('MONTH', 10) + ids.map(function (id) {
     return pad(ex(id).name.toUpperCase().slice(0,14), 16); }).join('');
   var lines = [head];
-  GOAL_MONTHS.forEach(function (m) {
+  goalMonths().forEach(function (m) {
     var row = pad(m, 10);
     ids.forEach(function (id) {
       var cfg = ex(id);
@@ -325,7 +338,7 @@ function renderGoals() {
 function renderGoalEditor() {
   var sel = document.getElementById('goalMonth');
   if (!sel.options.length)
-    GOAL_MONTHS.forEach(function (m) {
+    goalMonths().forEach(function (m) {
       var o = document.createElement('option'); o.value = m; o.textContent = m; sel.appendChild(o);
     });
   var wrap = document.getElementById('goalEditor');
