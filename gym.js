@@ -309,13 +309,13 @@ function renderProgress() {
 }
 
 /* ---------- 03 month goals (text) ---------- */
-/* goal shape: { w: lb, sets: n, reps: n }. Old goals were a bare number;
-   normalized to the exercise's standard scheme. */
+/* goal shape: { w: lb, reps: n } — met when any single set in one
+   session that month hits weight x reps. Old shapes normalized. */
 function goalOf(m, id) {
   var g = (state.goals[m] || {})[id];
   if (g === undefined || g === '') return undefined;
-  if (typeof g === 'number') return { w:g, sets:ex(id).sets, reps:ex(id).reps[1] };
-  return g;
+  if (typeof g === 'number') return { w:g, reps:ex(id).reps[1] };
+  return { w:g.w, reps:(g.reps === undefined || g.reps === null ? ex(id).reps[1] : g.reps) };
 }
 function goalMet(id, m, g) {
   var cfg = ex(id);
@@ -323,12 +323,11 @@ function goalMet(id, m, g) {
     if (l.date.slice(0, 7) !== m) return false;
     var e = entryIn(l, id);
     if (!e) return false;
-    var n = entrySets(e).filter(function (st) {
+    return entrySets(e).some(function (st) {
       if (st.w === null || st.r === null) return false;
       var wok = cfg.mode === 'assist' ? st.w <= g.w : st.w >= g.w;
       return wok && st.r >= g.reps;
-    }).length;
-    return n >= g.sets;
+    });
   });
 }
 function renderGoals() {
@@ -344,7 +343,7 @@ function renderGoals() {
       var cell;
       if (g === undefined) cell = '--';
       else {
-        cell = g.w + 'x' + g.sets + 'x' + g.reps +
+        cell = g.w + 'x' + g.reps +
           (a !== undefined ? ' / ' + a : '') +
           (goalMet(id, m, g) ? ' ✓' : '');
       }
@@ -353,7 +352,7 @@ function renderGoals() {
     lines.push(row);
   });
   lines.push('');
-  lines.push('goal: lb x sets x reps / month best · ✓ = hit in one session · assist: lower is better');
+  lines.push('goal: lb x reps / month best · ✓ = hit it in one set that month · assist: lower is better');
   document.getElementById('goalsPre').textContent = lines.join('\n');
 }
 
@@ -373,7 +372,6 @@ function renderGoalEditor() {
       row.className = 'goalrow';
       row.innerHTML = '<span class="gname">' + cfg.name + '</span>' +
         '<label class="row-label">LB<br><input type="number" step="0.5" min="0" data-k="w" style="width:64px" value="' + (g.w === undefined ? '' : g.w) + '"></label>' +
-        '<label class="row-label">SETS<br><input type="number" min="1" max="10" data-k="sets" style="width:52px" placeholder="' + cfg.sets + '" value="' + (g.sets === undefined ? '' : g.sets) + '"></label>' +
         '<label class="row-label">REPS<br><input type="number" min="1" data-k="reps" style="width:52px" placeholder="' + cfg.reps[1] + '" value="' + (g.reps === undefined ? '' : g.reps) + '"></label>';
       Array.prototype.forEach.call(row.querySelectorAll('input'), function (inp) {
         inp.addEventListener('change', function () { readGoalRow(m, id, row); });
@@ -391,11 +389,10 @@ function readGoalRow(m, id, row) {
     var el = row.querySelector('[data-k="' + k + '"]');
     return el ? parseFloat(el.value) : NaN;
   }
-  var w = val('w'), sets = val('sets'), reps = val('reps');
+  var w = val('w'), reps = val('reps');
   if (!state.goals[m]) state.goals[m] = {};
   if (isNaN(w)) delete state.goals[m][id];
   else state.goals[m][id] = { w:round2(w),
-    sets:isNaN(sets) ? cfg.sets : Math.max(1, Math.round(sets)),
     reps:isNaN(reps) ? cfg.reps[1] : Math.max(1, Math.round(reps)) };
   save(); renderGoals();
 }
