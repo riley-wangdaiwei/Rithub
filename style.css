@@ -900,6 +900,43 @@ textarea:focus {
 }
 
 
+.timer-only-button {
+
+  border:
+    1px solid #b9b2a4;
+
+  background: transparent;
+
+  color: #8a8474;
+
+  padding:
+    8px 14px;
+
+  font-family: inherit;
+
+  font-size: 11px;
+
+  letter-spacing:
+    0.05em;
+
+  cursor: pointer;
+
+  white-space: nowrap;
+
+}
+
+
+.timer-only-button.active {
+
+  border-color: #151515;
+
+  background: #151515;
+
+  color: #f7f4ec;
+
+}
+
+
 .timer-button:disabled {
 
   opacity: 0.35;

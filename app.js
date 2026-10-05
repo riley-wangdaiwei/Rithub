@@ -1736,6 +1736,9 @@ function renderProject() {
 
   refreshTimerUI();
 
+
+  refreshTimerOnlyUI();
+
 }
 
 
@@ -2171,9 +2174,17 @@ function renderHistory(project) {
 
         <div class="history-text">
 
-          ${escapeHtml(
+          ${
+
             commit.text
-          )}
+
+              ? escapeHtml(
+                  commit.text
+                )
+
+              : `<span style="color:#aaa;">⏱ timed</span>`
+
+          }
 
         </div>
 
@@ -3118,6 +3129,84 @@ function refreshTimerUI() {
 }
 
 
+/*
+   Timer-only toggle: when ON, stopping the timer
+   logs the minutes directly — no commit text needed.
+   For meditation / gym style projects.
+*/
+
+function refreshTimerOnlyUI() {
+
+  const button =
+    document.getElementById(
+      "timerOnlyButton"
+    );
+
+
+  if (!button) {
+
+    return;
+
+  }
+
+
+  const project =
+    getProject(
+      currentProjectId
+    );
+
+
+  const on =
+    !!(project && project.timerOnly);
+
+
+  button.classList.toggle(
+    "active",
+    on
+  );
+
+  button.textContent =
+    on ? "⏱ ONLY ✓" : "⏱ ONLY";
+
+}
+
+
+document
+  .getElementById(
+    "timerOnlyButton"
+  )
+  .addEventListener(
+
+    "click",
+
+    () => {
+
+      const project =
+        getProject(
+          currentProjectId
+        );
+
+
+      if (!project) {
+
+        return;
+
+      }
+
+
+      project.timerOnly =
+        !project.timerOnly;
+
+
+      save();
+
+      refreshTimerOnlyUI();
+
+    }
+
+  );
+
+
 function tickTimer() {
 
   if (timerTickId) {
@@ -3187,6 +3276,10 @@ function stopTimerForCommit() {
   }
 
 
+  const timerProjectId =
+    activeTimer.projectId;
+
+
   pendingDurationMin =
     timerElapsedMin(
       activeTimer.startedAt,
@@ -3202,6 +3295,75 @@ function stopTimerForCommit() {
   refreshTimerUI();
 
   refreshTimerNote();
+
+
+  const timerProject =
+    getProject(
+      timerProjectId
+    );
+
+
+  /*
+    Timer-only projects (meditation, gym): log the
+    minutes directly, skip the commit modal entirely.
+  */
+
+  if (timerProject && timerProject.timerOnly) {
+
+    const commit = {
+
+      id:
+        crypto.randomUUID(),
+
+      text:
+        "",
+
+      code:
+        generateCommitCode(),
+
+      createdAt:
+        new Date().toISOString()
+
+    };
+
+
+    if (
+      pendingDurationMin != null &&
+      pendingDurationMin > 0
+    ) {
+
+      commit.durationMin =
+        pendingDurationMin;
+
+    }
+
+
+    timerProject.commits.push(
+      commit
+    );
+
+
+    pendingDurationMin =
+      null;
+
+
+    save();
+
+    refreshTimerNote();
+
+
+    if (timerProjectId === currentProjectId) {
+
+      renderHistory(
+        timerProject
+      );
+
+    }
+
+
+    return;
+
+  }
 
 
   document
