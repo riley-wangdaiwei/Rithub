@@ -2783,23 +2783,19 @@ function renderHistory(project) {
 
           ${
 
-            commit.deep
-
-              ? `
+            `
 
                 <button
-                  class="deep-tag deep-tag-button"
+                  class="deep-tag deep-tag-button${commit.deep ? "" : " off"}"
                   data-deep-id="${commit.id}"
-                  title="Remove the deep mark"
+                  title="${commit.deep ? "Remove the deep mark" : "Mark as deep work"}"
                 >
 
                   · DEEP
 
                 </button>
 
-              `
-
-              : ""
+            `
 
           }
 
@@ -2838,14 +2834,14 @@ function renderHistory(project) {
     .querySelectorAll(".deep-tag-button")
     .forEach(button => {
       button.addEventListener("click", () => {
-        unmarkDeepCommit(button.dataset.deepId);
+        toggleDeepCommit(button.dataset.deepId);
       });
     });
 
 }
 
 
-function unmarkDeepCommit(id) {
+function toggleDeepCommit(id) {
 
   const project =
     getProject(currentProjectId);
@@ -2871,7 +2867,16 @@ function unmarkDeepCommit(id) {
   }
 
 
-  delete commit.deep;
+  if (commit.deep) {
+
+    delete commit.deep;
+
+  } else {
+
+    commit.deep =
+      true;
+
+  }
 
 
   save();

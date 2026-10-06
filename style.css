@@ -1148,3 +1148,12 @@ textarea:focus {
   cursor: pointer;
 
 }
+
+
+.deep-tag-button.off {
+
+  color: #c9c4b8;
+
+  font-weight: normal;
+
+}
