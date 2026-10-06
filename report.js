@@ -439,6 +439,23 @@ function blankHoursOf(stats) {
 }
 
 
+function wakeWorkHoursOf(stats) {
+
+  let n = 0;
+
+
+  for (let h = WAKE_START; h < WAKE_END; h++) {
+
+    if (hourCovered(h, stats)) n++;
+
+  }
+
+
+  return n;
+
+}
+
+
 /*
    Contiguous blank stretches inside the waking
    window, as [startHour, endHour) pairs.
@@ -1140,14 +1157,17 @@ function buildReport(projects, nowMs) {
 
   /* ---------- 3. gap trend ---------- */
 
-  L.push("GAP TREND — blank hrs/day (wake 08–24)");
+  L.push("GAP TREND — 24h bars (wake 08–24 + 8h sleep)");
+  L.push("          \u2588 work \u2591 idle \u2500 sleep");
 
 
   days.forEach((d, i) => {
 
     const s = dayStats[i];
 
-    const b = blankHoursOf(s);
+    const w = wakeWorkHoursOf(s);
+
+    const idle = (WAKE_END - WAKE_START) - w;
 
     const dc = commits.filter(
       c => c.t >= d && c.t < d + 86400000
@@ -1160,8 +1180,10 @@ function buildReport(projects, nowMs) {
 
     L.push(
       dayLabel(d) + " " +
-      (b > 0 ? "█".repeat(b) : "·") +
-      " " + b + "h" +
+      "\u2588".repeat(w) +
+      "\u2591".repeat(idle) +
+      " \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500" +
+      " " + w + "w " + idle + "i" +
       (est ? " ~" : "")
     );
 
