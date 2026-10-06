@@ -2043,8 +2043,7 @@ function startQuickTodoTimer(id) {
 
   startTimer(
     INBOX_ID,
-    { id: item.id, text: item.text },
-    false
+    { id: item.id, text: item.text }
   );
 
 
@@ -2788,11 +2787,15 @@ function renderHistory(project) {
 
               ? `
 
-                <span class="deep-tag">
+                <button
+                  class="deep-tag deep-tag-button"
+                  data-deep-id="${commit.id}"
+                  title="Remove the deep mark"
+                >
 
                   · DEEP
 
-                </span>
+                </button>
 
               `
 
@@ -2829,6 +2832,51 @@ function renderHistory(project) {
         deleteHistoryCommit(button.dataset.id);
       });
     });
+
+
+  document
+    .querySelectorAll(".deep-tag-button")
+    .forEach(button => {
+      button.addEventListener("click", () => {
+        unmarkDeepCommit(button.dataset.deepId);
+      });
+    });
+
+}
+
+
+function unmarkDeepCommit(id) {
+
+  const project =
+    getProject(currentProjectId);
+
+
+  if (!project) {
+
+    return;
+
+  }
+
+
+  const commit =
+    project.commits.find(
+      c => c.id === id
+    );
+
+
+  if (!commit) {
+
+    return;
+
+  }
+
+
+  delete commit.deep;
+
+
+  save();
+
+  renderProject();
 
 }
 
@@ -2890,6 +2938,12 @@ document
 
 
       refreshTimerNote();
+
+
+      pendingDeep =
+        false;
+
+      refreshCommitDeepToggle();
 
 
       document
@@ -3543,14 +3597,11 @@ let pendingDurationMin =
 
 
 /*
-   DEEP mode: armed by the DEEP toggle in project
-   view. The NEXT timer started while armed is
-   flagged deep; the flag lands on the commit and
-   disarms after stop. Quick todos never go deep.
+   DEEP is marked in the commit modal AFTER the timer
+   stops — never armed beforehand. pendingDeep is the
+   modal's local intent; it resets every time the modal
+   opens. Quick todos never go deep.
 */
-let deepMode =
-  false;
-
 let pendingDeep =
   false;
 
@@ -3733,11 +3784,7 @@ function refreshTimerUI() {
             activeTimer.todoText.slice(0, 24)
           : ""
       ) +
-      (
-        activeTimer.deep
-          ? " · DEEP"
-          : ""
-      );
+      "";
 
     badge.classList.remove(
       "hidden"
@@ -3751,8 +3798,6 @@ function refreshTimerUI() {
 
   }
 
-
-  refreshDeepToggle();
 
 }
 
@@ -3868,8 +3913,7 @@ function tickTimer() {
 
 function startTimer(
   projectId,
-  todo,
-  deep
+  todo
 ) {
 
   if (activeTimer) {
@@ -3885,12 +3929,7 @@ function startTimer(
       projectId,
 
     startedAt:
-      new Date().toISOString(),
-
-    deep:
-      deep !== undefined
-        ? !!deep
-        : deepMode
+      new Date().toISOString()
 
   };
 
@@ -3934,27 +3973,11 @@ function stopTimerForCommit() {
     activeTimer.todoText;
 
 
-  const timerDeep =
-    !!activeTimer.deep;
-
-
   pendingDurationMin =
     timerElapsedMin(
       activeTimer.startedAt,
       Date.now()
     );
-
-
-  pendingDeep =
-    timerDeep;
-
-
-  /*
-    The deep flag disarms after every stop —
-    each deep session is armed deliberately.
-  */
-  deepMode =
-    false;
 
 
   activeTimer =
@@ -3963,8 +3986,6 @@ function stopTimerForCommit() {
   persistTimer();
 
   refreshTimerUI();
-
-  refreshDeepToggle();
 
   refreshTimerNote();
 
@@ -4073,14 +4094,6 @@ function stopTimerForCommit() {
     }
 
 
-    if (timerDeep) {
-
-      commit.deep =
-        true;
-
-    }
-
-
     timerProject.commits.push(
       commit
     );
@@ -4135,6 +4148,12 @@ function stopTimerForCommit() {
   }
 
 
+  pendingDeep =
+    false;
+
+  refreshCommitDeepToggle();
+
+
   document
     .getElementById(
       "commitModal"
@@ -4174,11 +4193,7 @@ function refreshTimerNote() {
 
     text.textContent =
       pendingDurationMin +
-      (
-        pendingDeep
-          ? " MIN · DEEP WILL BE ATTACHED"
-          : " MIN WILL BE ATTACHED"
-      );
+      " MIN WILL BE ATTACHED";
 
     note.classList.remove(
       "hidden"
@@ -4195,11 +4210,11 @@ function refreshTimerNote() {
 }
 
 
-function refreshDeepToggle() {
+function refreshCommitDeepToggle() {
 
   const button =
     document.getElementById(
-      "deepToggle"
+      "commitDeepToggle"
     );
 
 
@@ -4210,35 +4225,21 @@ function refreshDeepToggle() {
   }
 
 
-  /*
-    While a timer runs, the toggle mirrors the
-    running session and can't be changed.
-  */
-  const on =
-    activeTimer
-      ? !!activeTimer.deep
-      : deepMode;
-
-
   button.textContent =
-    on ? "DEEP · ON" : "DEEP";
+    pendingDeep ? "DEEP · ON" : "DEEP";
 
 
   button.classList.toggle(
     "on",
-    on
+    pendingDeep
   );
-
-
-  button.disabled =
-    !!activeTimer;
 
 }
 
 
 document
   .getElementById(
-    "deepToggle"
+    "commitDeepToggle"
   )
   .addEventListener(
 
@@ -4246,17 +4247,10 @@ document
 
     () => {
 
-      if (activeTimer) {
+      pendingDeep =
+        !pendingDeep;
 
-        return;
-
-      }
-
-
-      deepMode =
-        !deepMode;
-
-      refreshDeepToggle();
+      refreshCommitDeepToggle();
 
     }
 
