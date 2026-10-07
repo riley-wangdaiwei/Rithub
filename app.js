@@ -1791,6 +1791,11 @@ function renderProject() {
   );
 
 
+  renderGoals(
+    project
+  );
+
+
   refreshTimerUI();
 
 
@@ -2669,6 +2674,97 @@ document
     }
 
   );
+
+
+/* =====================================================
+   GOALS (day / week / month targets)
+   Text is hers to write; the report checks them off
+   and computes hit rates. Saved with the project.
+===================================================== */
+
+function renderGoals(project) {
+
+  if (!project.goals) {
+
+    project.goals = {};
+
+  }
+
+
+  const map = {
+    goalDayInput: "day",
+    goalWeekInput: "week",
+    goalMonthInput: "month"
+  };
+
+
+  Object.keys(map).forEach(id => {
+
+    const el =
+      document.getElementById(id);
+
+
+    if (!el) return;
+
+
+    const v = project.goals[map[id]] || "";
+
+
+    if (document.activeElement !== el) {
+
+      el.value = v;
+
+    }
+
+  });
+
+}
+
+
+["goalDayInput", "goalWeekInput", "goalMonthInput"].forEach(
+  id => {
+
+    const period = {
+      goalDayInput: "day",
+      goalWeekInput: "week",
+      goalMonthInput: "month"
+    }[id];
+
+
+    document
+      .getElementById(id)
+      .addEventListener(
+
+        "change",
+
+        event => {
+
+          const project =
+            getProject(currentProjectId);
+
+
+          if (!project) return;
+
+
+          if (!project.goals) {
+
+            project.goals = {};
+
+          }
+
+
+          project.goals[period] =
+            event.target.value.trim();
+
+
+          save();
+
+        }
+
+      );
+
+  }
+);
 
 
 /* =====================================================

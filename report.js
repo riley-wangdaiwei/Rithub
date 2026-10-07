@@ -934,6 +934,206 @@ const RULE = "─".repeat(36);
    THE REPORT
 ===================================================== */
 
+function goalDayKey(ms) {
+
+  const d = new Date(ms);
+
+
+  return (
+    d.getFullYear() + "-" +
+    pad2(d.getMonth() + 1) + "-" +
+    pad2(d.getDate())
+  );
+
+}
+
+
+function goalWeekKey(ms) {
+
+  const d = new Date(ms);
+
+  const day = (d.getDay() + 6) % 7;
+
+  d.setDate(d.getDate() - day + 3);
+
+  const thursday = new Date(d.getTime());
+
+  const first = new Date(thursday.getFullYear(), 0, 4);
+
+  const fday = (first.getDay() + 6) % 7;
+
+  first.setDate(first.getDate() - fday + 3);
+
+  const week =
+    1 + Math.round((thursday - first) / 604800000);
+
+
+  return (
+    thursday.getFullYear() + "-W" +
+    String(week).padStart(2, "0")
+  );
+
+}
+
+
+function goalMonthKey(ms) {
+
+  const d = new Date(ms);
+
+
+  return (
+    d.getFullYear() + "-" +
+    pad2(d.getMonth() + 1)
+  );
+
+}
+
+
+function goalPeriodKey(period, ms) {
+
+  if (period === "week") return goalWeekKey(ms);
+
+  if (period === "month") return goalMonthKey(ms);
+
+  return goalDayKey(ms);
+
+}
+
+
+/*
+   Hit rate for one goal over its window:
+   day -> last 7 days, week -> last 4 weeks,
+   month -> last 3 months. Only periods with an
+   explicit check count; unchecked periods are
+   ignored, not punished.
+*/
+function goalHitRate(checks, period, nowMs) {
+
+  checks = checks || {};
+
+
+  const windows = {
+    day: 7,
+    week: 4,
+    month: 3
+  };
+
+
+  const n = windows[period] || 7;
+
+  const prefix = period[0] + ":";
+
+  let hits = 0;
+
+  let total = 0;
+
+
+  const cursor = new Date(nowMs);
+
+
+  for (let i = 0; i < n; i++) {
+
+    const v = checks[prefix + goalPeriodKey(period, cursor.getTime())];
+
+
+    if (v === true) {
+
+      hits++;
+      total++;
+
+    } else if (v === false) {
+
+      total++;
+
+    }
+
+
+    if (period === "week") {
+
+      cursor.setDate(cursor.getDate() - 7);
+
+    } else if (period === "month") {
+
+      cursor.setMonth(cursor.getMonth() - 1);
+
+    } else {
+
+      cursor.setDate(cursor.getDate() - 1);
+
+    }
+
+  }
+
+
+  return { hits: hits, total: total };
+
+}
+
+
+function buildGoalsLines(projects, nowMs) {
+
+  const withGoals = projects.filter(
+    p =>
+      p &&
+      !p.cancelled &&
+      p.goals &&
+      (p.goals.day || p.goals.week || p.goals.month)
+  );
+
+
+  if (!withGoals.length) return [];
+
+
+  const L = [];
+
+
+  L.push("GOALS — completion rate");
+
+
+  withGoals.forEach(p => {
+
+    L.push(p.name);
+
+
+    ["day", "week", "month"].forEach(period => {
+
+      const text = ((p.goals || {})[period] || "").trim();
+
+      if (!text) return;
+
+
+      const key =
+        period[0] + ":" + goalPeriodKey(period, nowMs);
+
+      const state = (p.goalChecks || {})[key];
+
+      const mark =
+        state === true ? "[x]" :
+        state === false ? "[-]" : "[ ]";
+
+      const r = goalHitRate(p.goalChecks, period, nowMs);
+
+      const rate =
+        r.total > 0 ? r.hits + "/" + r.total : "\u2014";
+
+
+      L.push(
+        "  " + mark + " " +
+        period.padEnd(5) + " " +
+        text.slice(0, 38) +
+        " \u00b7 " + rate
+      );
+
+    });
+
+  });
+
+
+  return L;
+
+}
+
+
 function buildReport(projects, nowMs) {
 
   nowMs = nowMs || Date.now();
@@ -1255,6 +1455,18 @@ function buildReport(projects, nowMs) {
   L.push("");
 
 
+  /* ---------- 4b. goals ---------- */
+
+  const goalLines =
+    buildGoalsLines(projects, nowMs);
+
+  goalLines.forEach(
+    line => L.push(line)
+  );
+
+  if (goalLines.length) L.push("");
+
+
   /* ---------- 5. deep week grid ---------- */
 
   deepWeekLines(
@@ -1313,6 +1525,18 @@ if (
     deepWeekLines,
 
     weekdayShort,
+
+    goalDayKey,
+
+    goalWeekKey,
+
+    goalMonthKey,
+
+    goalPeriodKey,
+
+    goalHitRate,
+
+    buildGoalsLines,
 
     timerElapsedMs,
 

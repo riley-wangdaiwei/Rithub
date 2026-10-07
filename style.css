@@ -1157,3 +1157,73 @@ textarea:focus {
   font-weight: normal;
 
 }
+
+
+.goal-row {
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 12px;
+
+  margin-bottom: 4px;
+
+}
+
+
+.goal-label {
+
+  width: 52px;
+
+  flex-shrink: 0;
+
+  font-size: 11px;
+
+  letter-spacing: 0.05em;
+
+  color: #8a8474;
+
+}
+
+
+.goal-input {
+
+  flex: 1;
+
+  border: none;
+
+  border-bottom:
+    1px solid #cfcac0;
+
+  background: transparent;
+
+  font-family: inherit;
+
+  font-size: 14px;
+
+  padding: 8px 2px;
+
+  color: #151515;
+
+  outline: none;
+
+}
+
+
+.goal-input::placeholder {
+
+  color: #b9b2a4;
+
+}
+
+
+.goal-hint {
+
+  font-size: 11px;
+
+  color: #b9b2a4;
+
+  margin-top: 8px;
+
+}
