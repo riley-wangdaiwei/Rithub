@@ -138,13 +138,6 @@ body {
 }
 
 
-.project-row.focus {
-
-  min-height: 175px;
-
-}
-
-
 .project-name {
 
   font-size: 21px;
@@ -161,19 +154,6 @@ body {
 
   color: #9b0000;
 
-}
-
-
-.focus-mark {
-
-  margin-top: 10px;
-
-  font-size: 10px;
-
-  color: #9b0000;
-
-  letter-spacing:
-    0.1em;
 }
 
 

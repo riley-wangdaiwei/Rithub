@@ -1399,7 +1399,7 @@ function renderHome() {
 
   projectsToShow.forEach(
 
-    project => {
+    (project, index) => {
 
       const latest =
         latestCommit(
@@ -1420,13 +1420,7 @@ function renderHome() {
         );
 
 
-      row.className =
-        "project-row" +
-        (
-          project.focus
-            ? " focus"
-            : ""
-        );
+      row.className = "project-row";
 
 
       row.innerHTML = `
@@ -1444,16 +1438,6 @@ function renderHome() {
 
           </div>
 
-
-          ${
-            project.focus
-              ? `
-                <div class="focus-mark">
-                  CURRENT
-                </div>
-              `
-              : ""
-          }
 
         </div>
 
@@ -1543,16 +1527,33 @@ function renderHome() {
 
 
           ${
-            project.focus
-              ? ""
-              : `
+            index > 0
+              ? `
                 <button
-                  class="plain-button focus-project"
+                  class="plain-button project-move-up"
                   data-id="${project.id}"
+                  title="Move up"
                 >
-                  FOCUS
+                  \u2191
                 </button>
               `
+              : ""
+          }
+
+
+          ${
+            index <
+            projectsToShow.length - 1
+              ? `
+                <button
+                  class="plain-button project-move-down"
+                  data-id="${project.id}"
+                  title="Move down"
+                >
+                  \u2193
+                </button>
+              `
+              : ""
           }
 
         </div>
@@ -1639,7 +1640,7 @@ function attachHomeEvents() {
 
   document
     .querySelectorAll(
-      ".focus-project"
+      ".project-move-up"
     )
     .forEach(
       button => {
@@ -1650,8 +1651,35 @@ function attachHomeEvents() {
 
           () => {
 
-            setFocus(
-              button.dataset.id
+            moveProject(
+              button.dataset.id,
+              -1
+            );
+
+          }
+
+        );
+
+      }
+    );
+
+
+  document
+    .querySelectorAll(
+      ".project-move-down"
+    )
+    .forEach(
+      button => {
+
+        button.addEventListener(
+
+          "click",
+
+          () => {
+
+            moveProject(
+              button.dataset.id,
+              1
             );
 
           }
@@ -1663,50 +1691,73 @@ function attachHomeEvents() {
 
 }
 
-function setFocus(id) {
-
-  projects.forEach(
-
-    project => {
-
-      if (
-        !project.cancelled
-      ) {
-
-        project.focus =
-          (
-            project.id === id
-          );
-
-      }
-
-    }
-
-  );
-
+function moveProject(id, direction) {
 
   /*
-    Move the focused project to the top
-    of the homepage list.
+    Swap the project with its visible neighbor,
+    the same pattern the quick-todo list uses.
+    The homepage order IS her priority order,
+    so this is how she re-ranks projects.
   */
 
-  const focusIndex =
+  const visible =
+    activeProjects().filter(
+      project =>
+        project.id !== INBOX_ID
+    );
+
+
+  const vi =
+    visible.findIndex(
+      project =>
+        project.id === id
+    );
+
+
+  const target =
+    vi + direction;
+
+
+  if (
+    vi < 0 ||
+    target < 0 ||
+    target >= visible.length
+  ) {
+
+    return;
+
+  }
+
+
+  const a =
     projects.findIndex(
       project =>
         project.id === id
     );
 
 
-  if (focusIndex > 0) {
+  const b =
+    projects.findIndex(
+      project =>
+        project.id ===
+          visible[target].id
+    );
 
-    const [focused] =
-      projects.splice(
-        focusIndex, 1
-      );
 
-    projects.unshift(focused);
+  if (a < 0 || b < 0) {
+
+    return;
 
   }
+
+
+  const temp = projects[a];
+
+
+  projects[a] = projects[b];
+
+
+  projects[b] = temp;
 
 
   save();
