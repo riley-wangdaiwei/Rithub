@@ -151,12 +151,6 @@
       color: #f7f4ec;
     }
 
-    .goal-check.missed {
-      color: #8a8474;
-      border-color: #8a8474;
-      text-decoration: line-through;
-    }
-
     .goal-period {
       width: 44px;
       flex-shrink: 0;
@@ -291,7 +285,7 @@
       <div class="goals-title">GOALS — completion rate</div>
       <div id="goalsList"></div>
       <div class="goals-legend">
-        tap [ ] to check off the current day / week / month · cycles hit → missed → unchecked
+        tap [ ] to check off the current day / week / month · tap again to uncheck
       </div>
     </section>
 
@@ -388,11 +382,11 @@
       pre.textContent =
         reportText
           .replace(
-            /\nDEEP WEEK — 1 char = 1h[\s\S]*?\n\n(?=rules:)/,
+            /\nGOALS — completion rate[\s\S]*?\n\n(?=DEEP WEEK —)/,
             "\n"
           )
           .replace(
-            /\nGOALS — completion rate[\s\S]*?\n\n(?=DEEP WEEK —)/,
+            /\nDEEP WEEK — 1 char = 1h[\s\S]*?\n\n(?=rules:)/,
             "\n"
           );
 
@@ -486,15 +480,13 @@
 
             btn.className =
               "goal-check" +
-              (state === true ? " hit" :
-               state === false ? " missed" : "");
+              (state === true ? " hit" : "");
 
             btn.textContent =
-              state === true ? "[x]" :
-              state === false ? "[-]" : "[ ]";
+              state === true ? "[x]" : "[ ]";
 
             btn.title =
-              "tap to cycle: unchecked → hit → missed";
+              "tap to check off / uncheck";
 
             btn.addEventListener(
               "click",
@@ -553,11 +545,12 @@
 
 
       /*
-        Cycle one goal's current-period check:
-        unchecked → hit → missed → unchecked.
-        Writes through to localStorage and pushes
-        to the gist (best effort; the local copy
-        is the source of truth).
+        Toggle one goal's current-period check:
+        unchecked <-> hit. Legacy `false` values
+        read as unchecked. Writes through to
+        localStorage and pushes to the gist
+        (best effort; the local copy is the
+        source of truth).
       */
       function toggleGoalCheck(projectId, period) {
 
@@ -585,14 +578,13 @@
         var cur = found.goalChecks[key];
 
 
-        found.goalChecks[key] =
-          cur === undefined ? true :
-          cur === true ? false : undefined;
-
-
-        if (found.goalChecks[key] === undefined) {
+        if (cur === true) {
 
           delete found.goalChecks[key];
+
+        } else {
+
+          found.goalChecks[key] = true;
 
         }
 

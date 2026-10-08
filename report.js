@@ -1023,29 +1023,17 @@ function goalHitRate(checks, period, nowMs) {
 
   const prefix = period[0] + ":";
 
-  let hits = 0;
 
-  let total = 0;
-
+  const keys = [];
 
   const cursor = new Date(nowMs);
 
 
   for (let i = 0; i < n; i++) {
 
-    const v = checks[prefix + goalPeriodKey(period, cursor.getTime())];
-
-
-    if (v === true) {
-
-      hits++;
-      total++;
-
-    } else if (v === false) {
-
-      total++;
-
-    }
+    keys.push(
+      prefix + goalPeriodKey(period, cursor.getTime())
+    );
 
 
     if (period === "week") {
@@ -1065,7 +1053,41 @@ function goalHitRate(checks, period, nowMs) {
   }
 
 
-  return { hits: hits, total: total };
+  /*
+     Oldest period with a hit bounds the window —
+     periods before the goal existed don't count.
+     Legacy `false` (missed) values read as unchecked.
+  */
+  let firstIdx = -1;
+
+
+  for (let i = keys.length - 1; i >= 0; i--) {
+
+    if (checks[keys[i]] === true) {
+
+      firstIdx = i;
+
+      break;
+
+    }
+
+  }
+
+
+  if (firstIdx < 0) return { hits: 0, total: 0 };
+
+
+  let hits = 0;
+
+
+  for (let i = 0; i <= firstIdx; i++) {
+
+    if (checks[keys[i]] === true) hits++;
+
+  }
+
+
+  return { hits: hits, total: firstIdx + 1 };
 
 }
 
@@ -1108,8 +1130,7 @@ function buildGoalsLines(projects, nowMs) {
       const state = (p.goalChecks || {})[key];
 
       const mark =
-        state === true ? "[x]" :
-        state === false ? "[-]" : "[ ]";
+        state === true ? "[x]" : "[ ]";
 
       const r = goalHitRate(p.goalChecks, period, nowMs);
 
