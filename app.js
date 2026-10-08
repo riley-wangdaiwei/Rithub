@@ -2721,6 +2721,15 @@ function renderGoals(project) {
 }
 
 
+/*
+   Goals save on every keystroke (debounced), not just
+   on blur — on phones the field may never blur before
+   the app goes to the background.
+*/
+let goalSaveTimer =
+  null;
+
+
 ["goalDayInput", "goalWeekInput", "goalMonthInput"].forEach(
   id => {
 
@@ -2731,6 +2740,59 @@ function renderGoals(project) {
     }[id];
 
 
+    const saveGoalNow = target => {
+
+      const project =
+        getProject(currentProjectId);
+
+
+      if (!project) return;
+
+
+      if (!project.goals) {
+
+        project.goals = {};
+
+      }
+
+
+      const v = target.value.trim();
+
+
+      if (project.goals[period] === v) return;
+
+
+      project.goals[period] = v;
+
+
+      save();
+
+    };
+
+
+    document
+      .getElementById(id)
+      .addEventListener(
+
+        "input",
+
+        event => {
+
+          clearTimeout(goalSaveTimer);
+
+          const target = event.target;
+
+
+          goalSaveTimer = setTimeout(
+            () => saveGoalNow(target),
+            800
+          );
+
+        }
+
+      );
+
+
     document
       .getElementById(id)
       .addEventListener(
@@ -2739,25 +2801,9 @@ function renderGoals(project) {
 
         event => {
 
-          const project =
-            getProject(currentProjectId);
+          clearTimeout(goalSaveTimer);
 
-
-          if (!project) return;
-
-
-          if (!project.goals) {
-
-            project.goals = {};
-
-          }
-
-
-          project.goals[period] =
-            event.target.value.trim();
-
-
-          save();
+          saveGoalNow(event.target);
 
         }
 
