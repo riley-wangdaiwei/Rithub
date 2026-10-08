@@ -1007,8 +1007,16 @@ function goalPeriodKey(period, ms) {
    explicit check count; unchecked periods are
    ignored, not punished.
 */
-function goalHitRate(checks, period, nowMs) {
+function goalDots(checks, period, nowMs) {
 
+  /*
+     Dots answer "which recent periods did I hit?",
+     not "what's my rate?". ● = hit that period,
+     · = no check recorded (no goal set, missed,
+     or forgot — not distinguished, no judgment).
+     Rightmost dot = current period. Legacy `false`
+     values read as unchecked.
+  */
   checks = checks || {};
 
 
@@ -1031,7 +1039,7 @@ function goalHitRate(checks, period, nowMs) {
 
   for (let i = 0; i < n; i++) {
 
-    keys.push(
+    keys.unshift(
       prefix + goalPeriodKey(period, cursor.getTime())
     );
 
@@ -1053,41 +1061,29 @@ function goalHitRate(checks, period, nowMs) {
   }
 
 
-  /*
-     Oldest period with a hit bounds the window —
-     periods before the goal existed don't count.
-     Legacy `false` (missed) values read as unchecked.
-  */
-  let firstIdx = -1;
-
-
-  for (let i = keys.length - 1; i >= 0; i--) {
-
-    if (checks[keys[i]] === true) {
-
-      firstIdx = i;
-
-      break;
-
-    }
-
-  }
-
-
-  if (firstIdx < 0) return { hits: 0, total: 0 };
-
+  let dots = "";
 
   let hits = 0;
 
 
-  for (let i = 0; i <= firstIdx; i++) {
+  keys.forEach(k => {
 
-    if (checks[keys[i]] === true) hits++;
+    if (checks[k] === true) {
 
-  }
+      dots += "\u25cf";
+
+      hits++;
+
+    } else {
+
+      dots += "\u00b7";
+
+    }
+
+  });
 
 
-  return { hits: hits, total: firstIdx + 1 };
+  return { dots: dots, hits: hits };
 
 }
 
@@ -1132,17 +1128,14 @@ function buildGoalsLines(projects, nowMs) {
       const mark =
         state === true ? "[x]" : "[ ]";
 
-      const r = goalHitRate(p.goalChecks, period, nowMs);
-
-      const rate =
-        r.total > 0 ? r.hits + "/" + r.total : "\u2014";
+      const r = goalDots(p.goalChecks, period, nowMs);
 
 
       L.push(
         "  " + mark + " " +
         period.padEnd(5) + " " +
-        text.slice(0, 38) +
-        " \u00b7 " + rate
+        text.slice(0, 32) +
+        "  " + r.dots + " " + r.hits
       );
 
     });
@@ -1555,7 +1548,7 @@ if (
 
     goalPeriodKey,
 
-    goalHitRate,
+    goalDots,
 
     buildGoalsLines,
 
