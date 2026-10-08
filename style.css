@@ -15,11 +15,8 @@ body {
   color: #151515;
 
   font-family:
-    "SF Mono",
-    Menlo,
-    Consolas,
-    "Liberation Mono",
     "Courier New",
+    Courier,
     monospace;
 
   font-size: 14px;
