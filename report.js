@@ -668,27 +668,6 @@ function quietStreak(commits, project, todayStart, maxDays) {
 }
 
 
-function hourAxis() {
-
-  const a = new Array(26).fill(" ");
-
-
-  a[0] = "0";
-
-  a[6] = "6";
-
-  a[12] = "1"; a[13] = "2";
-
-  a[18] = "1"; a[19] = "8";
-
-  a[24] = "2"; a[25] = "4";
-
-
-  return a.join("");
-
-}
-
-
 /*
    DEEP WEEK grid — 7 rows (rolling last 7 days).
    Dots, like the reference: filled = work, empty =
@@ -1328,7 +1307,7 @@ function buildReport(projects, nowMs) {
 
   /* ---------- 1. energy curve ---------- */
 
-  L.push("ENERGY — commits/hour");
+  L.push("ENERGY — commits/hour (0h → 24h)");
 
 
   const meanCounts =
@@ -1354,9 +1333,6 @@ function buildReport(projects, nowMs) {
     " min/hr " +
     (spM || "(no timed commits yet)")
   );
-
-  L.push("        " + hourAxis());
-
 
   const peak = peakRanges(meanCounts);
 
