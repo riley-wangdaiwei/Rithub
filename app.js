@@ -2682,6 +2682,88 @@ document
    and computes hit rates. Saved with the project.
 ===================================================== */
 
+function goalPeriodKeyLocal(period, ms) {
+
+  const d = new Date(ms);
+
+  const p2 = n => String(n).padStart(2, "0");
+
+
+  if (period === "week") {
+
+    const day = (d.getDay() + 6) % 7;
+
+    const th = new Date(d);
+
+    th.setDate(d.getDate() - day + 3);
+
+    const first = new Date(th.getFullYear(), 0, 4);
+
+    const fday = (first.getDay() + 6) % 7;
+
+    first.setDate(first.getDate() - fday + 3);
+
+    const w = 1 + Math.round((th - first) / 604800000);
+
+
+    return th.getFullYear() + "-W" + p2(w);
+
+  }
+
+
+  if (period === "month") {
+
+    return d.getFullYear() + "-" + p2(d.getMonth() + 1);
+
+  }
+
+
+  return (
+    d.getFullYear() + "-" +
+    p2(d.getMonth() + 1) + "-" +
+    p2(d.getDate())
+  );
+
+}
+
+
+function refreshGoalCheckButtons(project) {
+
+  const map = {
+    goalDayCheck: "day",
+    goalWeekCheck: "week",
+    goalMonthCheck: "month"
+  };
+
+
+  Object.keys(map).forEach(id => {
+
+    const btn =
+      document.getElementById(id);
+
+
+    if (!btn) return;
+
+
+    const period = map[id];
+
+    const key =
+      period[0] + ":" +
+      goalPeriodKeyLocal(period, Date.now());
+
+    const hit =
+      ((project.goalChecks || {})[key] === true);
+
+
+    btn.textContent = hit ? "[x]" : "[ ]";
+
+    btn.classList.toggle("hit", hit);
+
+  });
+
+}
+
+
 function renderGoals(project) {
 
   if (!project.goals) {
@@ -2717,6 +2799,9 @@ function renderGoals(project) {
     }
 
   });
+
+
+  refreshGoalCheckButtons(project);
 
 }
 
@@ -2804,6 +2889,66 @@ let goalSaveTimer =
           clearTimeout(goalSaveTimer);
 
           saveGoalNow(event.target);
+
+        }
+
+      );
+
+  }
+);
+
+
+["goalDayCheck", "goalWeekCheck", "goalMonthCheck"].forEach(
+  id => {
+
+    const period = {
+      goalDayCheck: "day",
+      goalWeekCheck: "week",
+      goalMonthCheck: "month"
+    }[id];
+
+
+    document
+      .getElementById(id)
+      .addEventListener(
+
+        "click",
+
+        () => {
+
+          const project =
+            getProject(currentProjectId);
+
+
+          if (!project) return;
+
+
+          if (!project.goalChecks) {
+
+            project.goalChecks = {};
+
+          }
+
+
+          const key =
+            period[0] + ":" +
+            goalPeriodKeyLocal(period, Date.now());
+
+
+          if (project.goalChecks[key] === true) {
+
+            delete project.goalChecks[key];
+
+          } else {
+
+            project.goalChecks[key] = true;
+
+          }
+
+
+          save();
+
+          refreshGoalCheckButtons(project);
 
         }
 

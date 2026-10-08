@@ -5,7 +5,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Rithub</title>
-  <link rel="stylesheet" href="style.css?v=9" />
+  <link rel="stylesheet" href="style.css?v=10" />
 </head>
 
 <body>
@@ -82,16 +82,19 @@
         <div class="goal-row">
           <span class="goal-label">DAY</span>
           <input id="goalDayInput" class="goal-input" placeholder="today's must-finish…" maxlength="140" autocomplete="off" />
+          <button id="goalDayCheck" class="goal-check-btn" title="check off today's goal">[ ]</button>
         </div>
         <div class="goal-row">
           <span class="goal-label">WEEK</span>
           <input id="goalWeekInput" class="goal-input" placeholder="this week's one thing…" maxlength="140" autocomplete="off" />
+          <button id="goalWeekCheck" class="goal-check-btn" title="check off this week's goal">[ ]</button>
         </div>
         <div class="goal-row">
           <span class="goal-label">MONTH</span>
           <input id="goalMonthInput" class="goal-input" placeholder="this month's must-complete…" maxlength="140" autocomplete="off" />
+          <button id="goalMonthCheck" class="goal-check-btn" title="check off this month's goal">[ ]</button>
         </div>
-        <div class="goal-hint">Checked off in the report at day / week / month end.</div>
+        <div class="goal-hint">Tap [ ] to check off the current period.</div>
       </section>
 
       <section class="section history-section">
@@ -169,7 +172,7 @@
     ALL WORK AND NO PLAY MAKES ME A LLUD GIRL
   </footer>
 
-  <script src="report.js?v=9"></script>
-  <script src="app.js?v=15"></script>
+  <script src="report.js?v=10"></script>
+  <script src="app.js?v=16"></script>
 </body>
 </html>
