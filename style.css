@@ -1314,3 +1314,54 @@ body {
   margin-bottom: 6px !important;
 
 }
+
+
+/* uniform size, no hierarchy — one size everywhere (2026-10-09) */
+
+* {
+
+  font-size: 14px !important;
+
+}
+
+
+/* quick todo: same radical compaction */
+
+.next-item {
+
+  display: block !important;
+
+  min-height: 0 !important;
+
+  padding: 2px 0 12px !important;
+
+  line-height: 1.05 !important;
+
+}
+
+
+.next-item > div {
+
+  margin: 0 !important;
+
+  padding: 0 !important;
+
+}
+
+
+.next-number,
+.next-text,
+.next-actions {
+
+  line-height: 1.05 !important;
+
+}
+
+
+.quick-todo-section {
+
+  margin-bottom: 16px !important;
+
+  padding-bottom: 12px !important;
+
+}
