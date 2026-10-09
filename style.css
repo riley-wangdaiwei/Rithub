@@ -1239,3 +1239,28 @@ textarea:focus {
   color: #f7f4ec;
 
 }
+
+
+/* ==================================================
+   RETRO PLAIN MODE (2026-10-09, her call):
+   no lines, just text, white background —
+   like early webpages. One override block at the
+   end so it's a single easy revert.
+   State fills (goal hit / deep on / timer running)
+   are kept: they mark state, not decoration.
+   ================================================== */
+
+body {
+
+  background: #ffffff;
+
+}
+
+
+* {
+
+  border: none !important;
+
+  box-shadow: none !important;
+
+}
