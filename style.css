@@ -1365,3 +1365,13 @@ body {
   padding-bottom: 12px !important;
 
 }
+
+
+/* project names bold (2026-10-09, her call):
+   hierarchy through weight, not size */
+
+.project-name {
+
+  font-weight: bold !important;
+
+}
