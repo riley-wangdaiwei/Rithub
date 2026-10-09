@@ -1266,43 +1266,62 @@ body {
 }
 
 
-/* tighter grouping: related text sits closer,
-   space between groups stays */
+/* radical proximity (2026-10-09, her call):
+   inside a block everything jams together,
+   air between blocks does all the separating. */
 
 .project-row {
 
-  padding: 14px 0 !important;
+  padding: 6px 0 22px !important;
 
   min-height: 0 !important;
 
-  column-gap: 24px !important;
+  column-gap: 16px !important;
+
+  line-height: 1.3 !important;
 
 }
 
 
 .row-meta {
 
-  margin-top: 4px !important;
+  margin-top: 1px !important;
 
 }
 
 
 .row-label {
 
-  margin-bottom: 2px !important;
+  margin-bottom: 0 !important;
+
+}
+
+
+.row-content {
+
+  line-height: 1.3 !important;
 
 }
 
 
 .goal-row {
 
-  margin-bottom: 2px !important;
+  margin-bottom: 0 !important;
+
+  line-height: 1.3 !important;
 
 }
 
 
 .section-title {
 
-  margin-bottom: 8px !important;
+  margin-bottom: 4px !important;
+
+}
+
+
+.project-name {
+
+  line-height: 1.2 !important;
 
 }
