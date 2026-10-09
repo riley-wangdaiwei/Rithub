@@ -1266,72 +1266,51 @@ body {
 }
 
 
-/* radical proximity (2026-10-09, her call):
-   inside a block everything jams together,
-   air between blocks does all the separating. */
+/* most radical proximity (2026-10-09, her call):
+   uniform size, everything inside a block jammed
+   to the physical limit — line-height ~1, zero
+   internal margins. Only the air BETWEEN blocks
+   separates. */
 
 .project-row {
 
-  /* stack vertically: name / next / latest / actions
-     become one dense blob, like a magazine text mass */
-
   display: block !important;
 
-  padding: 6px 0 22px !important;
+  padding: 2px 0 24px !important;
 
   min-height: 0 !important;
 
-  line-height: 1.3 !important;
+  line-height: 1.05 !important;
 
 }
 
 
-.project-row > div {
+.project-row > div,
+.project-row .project-name,
+.project-row .row-label,
+.project-row .row-content,
+.project-row .row-meta {
 
-  margin-bottom: 1px !important;
+  margin: 0 !important;
 
-}
+  padding: 0 !important;
 
-
-.row-meta {
-
-  margin-top: 1px !important;
-
-}
-
-
-.row-label {
-
-  margin-bottom: 0 !important;
-
-}
-
-
-.row-content {
-
-  line-height: 1.3 !important;
+  line-height: 1.05 !important;
 
 }
 
 
 .goal-row {
 
-  margin-bottom: 0 !important;
+  margin: 0 !important;
 
-  line-height: 1.3 !important;
+  line-height: 1.05 !important;
 
 }
 
 
 .section-title {
 
-  margin-bottom: 4px !important;
-
-}
-
-
-.project-name {
-
-  line-height: 1.2 !important;
+  margin-bottom: 6px !important;
 
 }
