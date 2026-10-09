@@ -1266,44 +1266,16 @@ body {
 }
 
 
-/* magazine proximity (2026-10-09, her call):
-   hierarchy through scale + space, not lines.
-   Homepage rank IS priority, so rank sets size:
-   #1 is the headline, #2-3 subheads, rest index.
-   Each project's cluster sits tight; air between
-   projects does the separating. */
+/* tighter grouping: related text sits closer,
+   space between groups stays */
 
 .project-row {
 
-  padding: 10px 0 30px !important;
+  padding: 14px 0 !important;
 
   min-height: 0 !important;
 
   column-gap: 24px !important;
-
-}
-
-
-.project-row:nth-child(1) .project-name {
-
-  font-size: 30px !important;
-
-}
-
-
-.project-row:nth-child(2) .project-name,
-.project-row:nth-child(3) .project-name {
-
-  font-size: 22px !important;
-
-}
-
-
-.project-row:nth-child(n+4) .project-name {
-
-  font-size: 15px !important;
-
-  color: #555 !important;
 
 }
 
