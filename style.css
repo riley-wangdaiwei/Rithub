@@ -1264,3 +1264,45 @@ body {
   box-shadow: none !important;
 
 }
+
+
+/* tighter grouping: related text sits closer,
+   space between groups stays */
+
+.project-row {
+
+  padding: 14px 0 !important;
+
+  min-height: 0 !important;
+
+  column-gap: 24px !important;
+
+}
+
+
+.row-meta {
+
+  margin-top: 4px !important;
+
+}
+
+
+.row-label {
+
+  margin-bottom: 2px !important;
+
+}
+
+
+.goal-row {
+
+  margin-bottom: 2px !important;
+
+}
+
+
+.section-title {
+
+  margin-bottom: 8px !important;
+
+}
