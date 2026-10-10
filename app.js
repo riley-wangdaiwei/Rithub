@@ -513,8 +513,26 @@ async function initFilmBg() {
     ).then(r => r.json());
 
 
+    const results = searchRes.results || [];
+
+
+    /*
+       Guard against TMDB fuzzy mismatch
+       (e.g. searching "8½" returning "Exit 8"):
+       prefer a result whose title actually matches
+       the query before falling back to top hit.
+    */
+
+    const q = film.toLowerCase();
+
     const movie =
-      (searchRes.results || [])[0];
+      results.find(m => {
+
+        const t = (m.title || "").toLowerCase();
+
+        return t.includes(q) || q.includes(t);
+
+      }) || results[0];
 
 
     if (!movie) {
