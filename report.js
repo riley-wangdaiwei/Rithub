@@ -1108,12 +1108,11 @@ function buildGoalsLines(projects, nowMs) {
   L.push("GOALS — completion rate");
 
 
-  withGoals.forEach(p => {
+  ["day", "week", "month"].forEach(period => {
 
-    L.push(p.name);
+    const rows = [];
 
-
-    ["day", "week", "month"].forEach(period => {
+    withGoals.forEach(p => {
 
       const text = ((p.goals || {})[period] || "").trim();
 
@@ -1131,14 +1130,20 @@ function buildGoalsLines(projects, nowMs) {
       const r = goalDots(p.goalChecks, period, nowMs);
 
 
-      L.push(
+      rows.push(
         "  " + mark + " " +
-        period.padEnd(5) + " " +
+        p.name + " — " +
         text.slice(0, 32) +
         "  " + r.dots + " " + r.hits
       );
 
     });
+
+
+    if (!rows.length) return;
+
+    L.push(period.toUpperCase());
+    rows.forEach(r => L.push(r));
 
   });
 
