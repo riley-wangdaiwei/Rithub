@@ -101,9 +101,31 @@
     .todayline { font-size: 12px; letter-spacing: 0.08em; margin: 12px 0 2px; }
     .todayline b { color: #9b0000; }
     .footer { text-align: center; font-size: 11px; color: #888; padding: 24px 0; }
+    /* film background — shared with index/report */
+    #filmBg {
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      background-size: cover;
+      background-position: center;
+      opacity: 0.22;
+      pointer-events: none;
+    }
+    #filmCredit {
+      position: fixed;
+      top: 8px;
+      left: 12px;
+      z-index: 50;
+      font-size: 11px;
+      color: #888;
+      letter-spacing: 0.04em;
+      pointer-events: none;
+    }
   </style>
 </head>
 <body>
+  <div id="filmBg"></div>
+  <div id="filmCredit" class="hidden"></div>
   <header class="topbar">
     <a class="back-link" href="index.html">&lt;- BACK</a>
     <div class="topbar-title">GYM LOG</div>
@@ -164,6 +186,8 @@
 
   <footer class="footer">ALL WORK AND NO PLAY MAKES ME A LLUD GIRL</footer>
 
+  <script src="film-bg.js?v=1"></script>
   <script src="gym.js?v=8"></script>
+  <script>if (typeof initFilmBg === 'function') initFilmBg();</script>
 </body>
 </html>
