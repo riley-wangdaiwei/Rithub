@@ -600,6 +600,84 @@ function peakRanges(mean) {
 }
 
 
+/*
+   Longest consecutive run of waking hours below
+   25% of peak activity: "13–15" or "14".
+   Null when no clear dip (flat day).
+*/
+
+function dipRange(mean) {
+
+  const max =
+    Math.max.apply(null, mean.concat([0]));
+
+
+  if (max <= 0) {
+
+    return null;
+
+  }
+
+
+  const threshold = max * 0.25;
+
+  let bestStart = -1, bestLen = 0;
+
+  let curStart = -1, curLen = 0;
+
+
+  for (let h = WAKE_START; h < WAKE_END; h++) {
+
+    if ((mean[h] || 0) < threshold) {
+
+      if (curStart < 0) curStart = h;
+
+      curLen++;
+
+    } else {
+
+      if (curLen > bestLen) {
+
+        bestLen = curLen;
+
+        bestStart = curStart;
+
+      }
+
+      curStart = -1;
+
+      curLen = 0;
+
+    }
+
+  }
+
+
+  if (curLen > bestLen) {
+
+    bestLen = curLen;
+
+    bestStart = curStart;
+
+  }
+
+
+  if (bestLen < 2) {
+
+    return null;
+
+  }
+
+
+  const end = bestStart + bestLen - 1;
+
+  return bestStart === end
+    ? String(bestStart)
+    : bestStart + "–" + end;
+
+}
+
+
 function maxZeroRun(counts) {
 
   let best = 0, cur = 0;
@@ -1357,10 +1435,12 @@ function buildReport(projects, nowMs) {
 
   const peak = peakRanges(meanCounts);
 
+  const dip = dipRange(meanCounts);
+
 
   L.push(
-    " dip 13–15 (circadian) · peak " +
-    (peak || "—")
+    " dip " + (dip || "—") +
+    " · peak " + (peak || "—")
   );
 
   L.push("");
@@ -1522,6 +1602,7 @@ if (
     deepStartedOn,
 
     peakRanges,
+    dipRange,
 
     maxZeroRun,
 
