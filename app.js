@@ -411,6 +411,227 @@ const SYNC_CONFIG_KEY = "rithub-cloud";
 const SYNC_META_KEY = "rithub-cloud-meta";
 const GIST_FILE = "rithub.json";
 
+
+/* =====================================================
+   FILM BACKGROUND — daily backdrop from her watched
+   films via TMDB. Config lives only on this device.
+   ===================================================== */
+
+const FILM_BG_KEY = "rithub-film-bg-v1";
+const FILM_BG_CACHE_KEY = "rithub-film-bg-cache-v1";
+
+
+function getFilmBgConfig() {
+
+  try {
+
+    return JSON.parse(
+      localStorage.getItem(FILM_BG_KEY)
+    ) || {};
+
+  } catch (e) {
+
+    return {};
+
+  }
+
+}
+
+
+function dayOfYear(d) {
+
+  const start = new Date(d.getFullYear(), 0, 0);
+
+  return Math.floor((d - start) / 864e5);
+
+}
+
+
+async function initFilmBg() {
+
+  const cfg = getFilmBgConfig();
+
+  const key = (cfg.tmdbKey || "").trim();
+
+  const films = (cfg.films || [])
+    .map(f => (f || "").trim())
+    .filter(Boolean);
+
+
+  if (!key || !films.length) {
+
+    return;
+
+  }
+
+
+  const today = new Date();
+
+  const dateStr =
+    today.getFullYear() + "-" +
+    String(today.getMonth() + 1).padStart(2, "0") +
+    "-" +
+    String(today.getDate()).padStart(2, "0");
+
+
+  // one backdrop per day, cached in localStorage
+
+  let cache = {};
+
+  try {
+
+    cache =
+      JSON.parse(
+        localStorage.getItem(FILM_BG_CACHE_KEY)
+      ) || {};
+
+  } catch (e) {}
+
+
+  if (
+    cache.dateStr === dateStr &&
+    cache.backdropUrl
+  ) {
+
+    applyFilmBg(cache);
+
+    return;
+
+  }
+
+
+  const film = films[dayOfYear(today) % films.length];
+
+
+  try {
+
+    const searchRes = await fetch(
+      "https://api.themoviedb.org/3/search/movie" +
+      "?api_key=" + encodeURIComponent(key) +
+      "&query=" + encodeURIComponent(film) +
+      "&language=en-US"
+    ).then(r => r.json());
+
+
+    const movie =
+      (searchRes.results || [])[0];
+
+
+    if (!movie) {
+
+      return;
+
+    }
+
+
+    const [credits, images] = await Promise.all([
+
+      fetch(
+        "https://api.themoviedb.org/3/movie/" +
+        movie.id + "/credits" +
+        "?api_key=" + encodeURIComponent(key)
+      ).then(r => r.json()),
+
+      fetch(
+        "https://api.themoviedb.org/3/movie/" +
+        movie.id + "/images" +
+        "?api_key=" + encodeURIComponent(key)
+      ).then(r => r.json())
+
+    ]);
+
+
+    const director =
+      ((credits.crew || []).find(
+        p => p.job === "Director"
+      ) || {}).name || "";
+
+
+    const backdrop =
+      (images.backdrops || [])[0];
+
+
+    if (!backdrop) {
+
+      return;
+
+    }
+
+
+    const entry = {
+
+      dateStr: dateStr,
+
+      film: film,
+
+      title: movie.title || film,
+
+      year: (movie.release_date || "").slice(0, 4),
+
+      director: director,
+
+      backdropUrl:
+        "https://image.tmdb.org/t/p/w1280" +
+        backdrop.file_path
+
+    };
+
+
+    localStorage.setItem(
+      FILM_BG_CACHE_KEY,
+      JSON.stringify(entry)
+    );
+
+
+    applyFilmBg(entry);
+
+  } catch (e) {
+
+    /* silent: background is decoration, never blocking */
+
+  }
+
+}
+
+
+function applyFilmBg(entry) {
+
+  const bg = document.getElementById("filmBg");
+
+  if (bg && entry.backdropUrl) {
+
+    bg.style.backgroundImage =
+      "url(" + entry.backdropUrl + ")";
+
+  }
+
+
+  const credit = document.getElementById("filmCredit");
+
+  if (credit) {
+
+    const parts = [entry.title || entry.film];
+
+    if (entry.year) {
+
+      parts[0] += " (" + entry.year + ")";
+
+    }
+
+    if (entry.director) {
+
+      parts.push(entry.director);
+
+    }
+
+    credit.textContent = parts.join(" \u00b7 ");
+
+    credit.classList.remove("hidden");
+
+  }
+
+}
+
 let pushTimer = null;
 
 
@@ -922,6 +1143,28 @@ function wireSyncUI() {
           .getElementById("syncModal")
           .classList.remove("hidden");
 
+
+        const filmCfg = getFilmBgConfig();
+
+        const tmdbInput =
+          document.getElementById("filmTmdbInput");
+
+        if (tmdbInput) {
+
+          tmdbInput.value = filmCfg.tmdbKey || "";
+
+        }
+
+        const filmListInput =
+          document.getElementById("filmListInput");
+
+        if (filmListInput) {
+
+          filmListInput.value =
+            (filmCfg.films || []).join("\n");
+
+        }
+
       }
 
     );
@@ -938,6 +1181,48 @@ function wireSyncUI() {
         document
           .getElementById("syncModal")
           .classList.add("hidden");
+
+      }
+
+    );
+
+
+  document
+    .getElementById("saveFilmBgButton")
+    .addEventListener(
+
+      "click",
+
+      () => {
+
+        const tmdbKey =
+          document
+            .getElementById(
+              "filmTmdbInput"
+            )
+            .value.trim();
+
+        const films =
+          document
+            .getElementById(
+              "filmListInput"
+            )
+            .value
+            .split("\n")
+            .map(f => f.trim())
+            .filter(Boolean);
+
+        localStorage.setItem(
+          FILM_BG_KEY,
+          JSON.stringify({
+            tmdbKey: tmdbKey,
+            films: films
+          })
+        );
+
+        localStorage.removeItem(FILM_BG_CACHE_KEY);
+
+        initFilmBg();
 
       }
 
@@ -1577,6 +1862,9 @@ function renderHome() {
 
 
   renderQuickTodos();
+
+
+  initFilmBg();
 
 }
 

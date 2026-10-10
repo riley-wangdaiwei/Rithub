@@ -1375,3 +1375,47 @@ body {
   font-weight: bold !important;
 
 }
+
+
+/* film background (2026-10-09, her call):
+   daily backdrop from her watched films via TMDB,
+   heavily faded so the text-first layout stays readable */
+
+#filmBg {
+
+  position: fixed;
+
+  inset: 0;
+
+  z-index: -1;
+
+  background-size: cover;
+
+  background-position: center;
+
+  opacity: 0.1;
+
+  pointer-events: none;
+
+}
+
+
+#filmCredit {
+
+  position: fixed;
+
+  top: 8px;
+
+  left: 12px;
+
+  z-index: 50;
+
+  font-size: 11px;
+
+  color: #888;
+
+  letter-spacing: 0.04em;
+
+  pointer-events: none;
+
+}

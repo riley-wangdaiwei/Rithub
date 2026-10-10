@@ -5,7 +5,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Rithub</title>
-  <link rel="stylesheet" href="style.css?v=30" />
+  <link rel="stylesheet" href="style.css?v=31" />
 </head>
 
 <body>
@@ -165,14 +165,25 @@
         <button id="syncNowButton" class="plain-button hidden">SYNC NOW</button>
         <button id="enableSyncButton" class="commit-button">ENABLE</button>
       </div>
+
+      <div class="modal-heading" style="margin-top:28px">FILM BACKGROUND</div>
+      <div class="sync-hint">Daily backdrop from a film you've watched — via TMDB. Free key at themoviedb.org (v3 auth).</div>
+      <input id="filmTmdbInput" type="password" placeholder="tmdb api key" autocomplete="off" />
+      <textarea id="filmListInput" rows="6" placeholder="one film per line, e.g.&#10;Eternity and a Day&#10;Forever and a Day" style="width:100%;margin-top:8px"></textarea>
+      <div class="modal-actions">
+        <button id="saveFilmBgButton" class="commit-button">SAVE FILM BG</button>
+      </div>
     </div>
   </div>
+
+  <div id="filmBg"></div>
+  <div id="filmCredit" class="hidden"></div>
 
   <footer class="footer">
     ALL WORK AND NO PLAY MAKES ME A LLUD GIRL
   </footer>
 
-  <script src="report.js?v=30"></script>
-  <script src="app.js?v=36"></script>
+  <script src="report.js?v=31"></script>
+  <script src="app.js?v=37"></script>
 </body>
 </html>
