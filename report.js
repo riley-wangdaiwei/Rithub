@@ -1119,19 +1119,11 @@ function buildGoalsLines(projects, nowMs) {
       if (!text) return;
 
 
-      const key =
-        period[0] + ":" + goalPeriodKey(period, nowMs);
-
-      const state = (p.goalChecks || {})[key];
-
-      const mark =
-        state === true ? "[x]" : "[ ]";
-
       const r = goalDots(p.goalChecks, period, nowMs);
 
 
       rows.push(
-        "  " + mark + " " +
+        "  " +
         p.name + " — " +
         text.slice(0, 32) +
         "  " + r.dots + " " + r.hits
