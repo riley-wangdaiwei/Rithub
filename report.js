@@ -1568,7 +1568,7 @@ function buildReport(projects, nowMs) {
   L.push("");
 
   L.push(
-    "rules: 90/20 ultradian · dip 13–15 · " +
+    "rules: 90/20 ultradian · dip " + (dip || "—") + " · " +
     "sleep guard 00:30 · ~ = estimated"
   );
 
