@@ -202,10 +202,32 @@
       padding: 24px 0;
     }
 
+  /* film background — shared with index/gym */
+  #filmBg {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background-size: cover;
+    background-position: center;
+    opacity: 0.22;
+    pointer-events: none;
+  }
+  #filmCredit {
+    position: fixed;
+    top: 8px;
+    left: 12px;
+    z-index: 50;
+    font-size: 11px;
+    color: #888;
+    letter-spacing: 0.04em;
+    pointer-events: none;
+  }
   </style>
 </head>
 
 <body>
+  <div id="filmBg"></div>
+  <div id="filmCredit" class="hidden"></div>
   <header class="topbar">
     <a class="new-project-button" href="index.html">
       &lt;- BACK
@@ -241,7 +263,9 @@
     ALL WORK AND NO PLAY MAKES ME A LLUD GIRL
   </footer>
 
-  <script src="report.js?v=29"></script>
+  <script src="film-bg.js?v=2"></script>
+  <script src="report.js?v=30"></script>
+  <script>if (typeof initFilmBg === 'function') initFilmBg();</script>
   <script>
 
     (function () {
