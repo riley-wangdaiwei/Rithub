@@ -1203,6 +1203,42 @@ textarea:focus {
 }
 
 
+/* Homepage day-goal line under each project name.
+   Same look as .goal-input; retro-plain override
+   strips the border anyway. */
+.home-day-goal-input {
+
+  display: block;
+
+  width: 100%;
+
+  border: none;
+
+  border-bottom:
+    1px solid #cfcac0;
+
+  background: transparent;
+
+  font-family: inherit;
+
+  font-size: 14px;
+
+  padding: 8px 2px;
+
+  color: #151515;
+
+  outline: none;
+
+}
+
+
+.home-day-goal-input::placeholder {
+
+  color: #b9b2a4;
+
+}
+
+
 /* ==================================================
    SPRINT (MIT) card — top of the projects column.
    Retro-plain: whitespace separates, the MIT name

@@ -1579,6 +1579,21 @@ function renderHome() {
           </div>
 
 
+          <div class="row-label">
+            DAY GOAL
+          </div>
+
+          <input
+            class="home-day-goal-input"
+            data-id="${project.id}"
+            placeholder="today's must-finish…"
+            maxlength="140"
+            autocomplete="off"
+            value="${escapeHtml(
+              (project.goals || {}).day || ""
+            )}"
+          />
+
         </div>
 
 
@@ -1713,6 +1728,9 @@ function renderHome() {
   attachHomeEvents();
 
 
+  attachHomeDayGoalInputs();
+
+
   refreshTimerUI();
 
 
@@ -1723,6 +1741,99 @@ function renderHome() {
 
 
   initFilmBg();
+
+}
+
+
+/*
+   Homepage day-goal lines: one input under each
+   project, filled by her for her own visibility.
+   Not tracked — no check, no dots. Writes to the
+   project's goals.day, the same field the old
+   project-page day input used to edit.
+*/
+let homeDayGoalSaveTimer =
+  null;
+
+
+function saveHomeDayGoalNow(input) {
+
+  const project =
+    getProject(input.dataset.id);
+
+
+  if (!project) return;
+
+
+  if (!project.goals) {
+
+    project.goals = {};
+
+  }
+
+
+  const v = input.value.trim();
+
+
+  if (project.goals.day === v) return;
+
+
+  project.goals.day = v;
+
+
+  save();
+
+}
+
+
+function attachHomeDayGoalInputs() {
+
+  document
+    .querySelectorAll(
+      ".home-day-goal-input"
+    )
+    .forEach(input => {
+
+      input.addEventListener(
+
+        "input",
+
+        event => {
+
+          clearTimeout(
+            homeDayGoalSaveTimer
+          );
+
+          const target = event.target;
+
+
+          homeDayGoalSaveTimer = setTimeout(
+            () => saveHomeDayGoalNow(target),
+            800
+          );
+
+        }
+
+      );
+
+
+      input.addEventListener(
+
+        "change",
+
+        event => {
+
+          clearTimeout(
+            homeDayGoalSaveTimer
+          );
+
+          saveHomeDayGoalNow(event.target);
+
+        }
+
+      );
+
+    });
 
 }
 
@@ -3356,8 +3467,6 @@ function renderGoals(project) {
 
 
   const map = {
-    goalDayInput: "day",
-    goalWeekInput: "week",
     goalMonthInput: "month"
   };
 
@@ -3395,12 +3504,10 @@ let goalSaveTimer =
   null;
 
 
-["goalDayInput", "goalWeekInput", "goalMonthInput"].forEach(
+["goalMonthInput"].forEach(
   id => {
 
     const period = {
-      goalDayInput: "day",
-      goalWeekInput: "week",
       goalMonthInput: "month"
     }[id];
 
