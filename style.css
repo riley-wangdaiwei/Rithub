@@ -1203,49 +1203,6 @@ textarea:focus {
 }
 
 
-.goal-hint {
-
-  font-size: 11px;
-
-  color: #b9b2a4;
-
-  margin-top: 8px;
-
-}
-
-
-.goal-check-btn {
-
-  flex-shrink: 0;
-
-  border: 1px solid #151515;
-
-  background: transparent;
-
-  font-family: inherit;
-
-  font-size: 12px;
-
-  width: 38px;
-
-  padding: 3px 0;
-
-  cursor: pointer;
-
-  color: #151515;
-
-}
-
-
-.goal-check-btn.hit {
-
-  background: #151515;
-
-  color: #f7f4ec;
-
-}
-
-
 /* ==================================================
    SPRINT (MIT) card — top of the projects column.
    Retro-plain: whitespace separates, the MIT name

@@ -1546,18 +1546,6 @@ function buildReport(projects, nowMs) {
   L.push("");
 
 
-  /* ---------- 4b. goals ---------- */
-
-  const goalLines =
-    buildGoalsLines(projects, nowMs);
-
-  goalLines.forEach(
-    line => L.push(line)
-  );
-
-  if (goalLines.length) L.push("");
-
-
   /* ---------- 5. deep week grid ---------- */
 
   deepWeekLines(
