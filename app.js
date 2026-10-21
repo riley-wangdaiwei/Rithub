@@ -104,6 +104,18 @@ let localUpdatedAt = null;
 
 
 /*
+   Sprint (MIT) state. currentSprint is the active
+   run, sprintHistory is the append-only record of
+   finished runs. Both sync via gist, same as
+   projects — never localStorage-only, or phone and
+   computer diverge.
+*/
+
+let currentSprint = null;
+let sprintHistory = [];
+
+
+/*
    The defaults for a first launch.
 */
 
@@ -288,6 +300,14 @@ function loadLocal() {
     projects = raw.projects;
     localUpdatedAt = raw.updatedAt || null;
 
+    currentSprint =
+      raw.currentSprint || null;
+
+    sprintHistory =
+      Array.isArray(raw.sprintHistory)
+        ? raw.sprintHistory
+        : [];
+
   } else {
 
     projects = seedProjects();
@@ -380,7 +400,11 @@ function saveLocal() {
 
       updatedAt: localUpdatedAt,
 
-      projects: projects
+      projects: projects,
+
+      currentSprint: currentSprint,
+
+      sprintHistory: sprintHistory
 
     })
 
@@ -529,7 +553,11 @@ function envelope() {
 
     projects: projects,
 
-    filmList: getFilmBgConfig().films || []
+    filmList: getFilmBgConfig().films || [],
+
+    currentSprint: currentSprint,
+
+    sprintHistory: sprintHistory
 
   };
 
@@ -654,6 +682,16 @@ function adoptRemote(remote) {
     }
 
   }
+
+
+  /* Sprint state syncs via gist, same as projects. */
+  currentSprint =
+    remote.currentSprint || null;
+
+  sprintHistory =
+    Array.isArray(remote.sprintHistory)
+      ? remote.sprintHistory
+      : [];
 
 
   saveLocal();
@@ -1681,7 +1719,476 @@ function renderHome() {
   renderQuickTodos();
 
 
+  renderSprintCard();
+
+
   initFilmBg();
+
+}
+
+
+/* =====================================================
+   SPRINT (MIT)
+   One MIT per 3–4 day run, declared by her on the
+   homepage card. A touch = one tap = one dot.
+   The chain shows every run day: dots where she
+   touched, a gap where she did not. Finishing a
+   sprint archives it to sprintHistory with one
+   result line she writes herself.
+===================================================== */
+
+let finishingSprint = false;
+
+
+function localDayString(ms) {
+
+  const d = new Date(ms);
+
+  const y = d.getFullYear();
+
+  const m =
+    String(d.getMonth() + 1)
+      .padStart(2, "0");
+
+  const day =
+    String(d.getDate())
+      .padStart(2, "0");
+
+  return y + "-" + m + "-" + day;
+
+}
+
+
+function sprintDayList(sprint) {
+
+  const days = [];
+
+  const start =
+    new Date(
+      sprint.startDate + "T00:00:00"
+    ).getTime();
+
+  for (
+    let i = 0;
+    i < sprint.lengthDays;
+    i++
+  ) {
+
+    days.push(
+      localDayString(
+        start + i * 86400000
+      )
+    );
+
+  }
+
+  return days;
+
+}
+
+
+function sprintChainHtml(sprint, nowMs) {
+
+  const days =
+    sprintDayList(sprint);
+
+  const today =
+    localDayString(nowMs);
+
+  const touches =
+    sprint.touches || {};
+
+  return days.map(day => {
+
+    const count =
+      touches[day] || 0;
+
+    let dots = "";
+
+    if (count > 0) {
+
+      dots = "●".repeat(count);
+
+    } else if (day <= today) {
+
+      /* A past-or-today day with no touch:
+         the visible gap in the chain. */
+      dots = "·";
+
+    }
+
+    return (
+      '<span class="sprint-chain-day">' +
+      escapeHtml(day.slice(5)) +
+      " " + dots +
+      "</span>"
+    );
+
+  }).join("");
+
+}
+
+
+function renderSprintCard() {
+
+  const card =
+    document.getElementById(
+      "sprintCard"
+    );
+
+  if (!card) return;
+
+
+  if (!currentSprint) {
+
+    card.innerHTML = `
+
+      <div class="section-heading">
+        SPRINT
+      </div>
+
+      <div class="next-add-row">
+        <input
+          id="sprintMitInput"
+          class="next-input"
+          placeholder="this run's MIT…"
+          maxlength="140"
+        />
+      </div>
+
+      <div class="next-add-row">
+        <input
+          id="sprintOutputInput"
+          class="next-input"
+          placeholder="what it delivers…"
+          maxlength="140"
+        />
+      </div>
+
+      <div class="next-add-row">
+        <select
+          id="sprintLengthInput"
+          class="next-input"
+        >
+          <option value="3">3 days</option>
+          <option value="4" selected>4 days</option>
+        </select>
+        <button
+          id="startSprintButton"
+          class="commit-button"
+        >
+          START SPRINT
+        </button>
+      </div>
+
+    `;
+
+    document
+      .getElementById(
+        "startSprintButton"
+      )
+      .addEventListener(
+        "click",
+        startSprint
+      );
+
+    return;
+
+  }
+
+
+  if (finishingSprint) {
+
+    card.innerHTML = `
+
+      <div class="section-heading">
+        SPRINT
+      </div>
+
+      <div class="sprint-mit">
+        ${escapeHtml(currentSprint.mit)}
+      </div>
+
+      <div class="next-add-row">
+        <input
+          id="sprintResultInput"
+          class="next-input"
+          placeholder="what did this sprint deliver?…"
+          maxlength="140"
+        />
+      </div>
+
+      <div class="next-add-row">
+        <button
+          id="saveSprintHistoryButton"
+          class="commit-button"
+        >
+          SAVE TO HISTORY
+        </button>
+        <button
+          id="cancelFinishSprintButton"
+          class="plain-button"
+        >
+          BACK
+        </button>
+      </div>
+
+    `;
+
+    document
+      .getElementById(
+        "saveSprintHistoryButton"
+      )
+      .addEventListener(
+        "click",
+        finishSprint
+      );
+
+    document
+      .getElementById(
+        "cancelFinishSprintButton"
+      )
+      .addEventListener(
+        "click",
+        () => {
+
+          finishingSprint = false;
+
+          renderSprintCard();
+
+        }
+      );
+
+    return;
+
+  }
+
+
+  const nowMs = Date.now();
+
+  const days =
+    sprintDayList(currentSprint);
+
+  const startMs =
+    new Date(
+      currentSprint.startDate + "T00:00:00"
+    ).getTime();
+
+  const elapsed =
+    Math.floor(
+      (
+        new Date(
+          localDayString(nowMs) + "T00:00:00"
+        ).getTime() - startMs
+      ) / 86400000
+    );
+
+  const dayText =
+    elapsed < currentSprint.lengthDays
+      ? (
+        "day " + (elapsed + 1) +
+        " of " + currentSprint.lengthDays
+      )
+      : "run over";
+
+  const touches =
+    currentSprint.touches || {};
+
+  const todayCount =
+    touches[localDayString(nowMs)] || 0;
+
+  const totalCount =
+    days.reduce(
+      (n, d) => n + (touches[d] || 0),
+      0
+    );
+
+  card.innerHTML = `
+
+    <div class="section-heading">
+      SPRINT
+    </div>
+
+    <div class="sprint-mit">
+      ${escapeHtml(currentSprint.mit)}
+    </div>
+
+    <div class="sprint-meta">
+      delivers:
+      ${escapeHtml(
+        currentSprint.output || "—"
+      )}
+      · ${dayText}
+    </div>
+
+    <div class="sprint-chain">
+      ${sprintChainHtml(currentSprint, nowMs)}
+    </div>
+
+    <div class="sprint-meta">
+      today: ${todayCount} touches
+      · total: ${totalCount} touches
+    </div>
+
+    <div class="next-add-row">
+      <button
+        id="touchSprintButton"
+        class="commit-button"
+      >
+        + TOUCH
+      </button>
+      <button
+        id="finishSprintButton"
+        class="plain-button"
+      >
+        FINISH SPRINT
+      </button>
+    </div>
+
+  `;
+
+  document
+    .getElementById(
+      "touchSprintButton"
+    )
+    .addEventListener(
+      "click",
+      touchSprint
+    );
+
+  document
+    .getElementById(
+      "finishSprintButton"
+    )
+    .addEventListener(
+      "click",
+      () => {
+
+        finishingSprint = true;
+
+        renderSprintCard();
+
+      }
+    );
+
+}
+
+
+function startSprint() {
+
+  const mitInput =
+    document.getElementById(
+      "sprintMitInput"
+    );
+
+  const outputInput =
+    document.getElementById(
+      "sprintOutputInput"
+    );
+
+  const lengthInput =
+    document.getElementById(
+      "sprintLengthInput"
+    );
+
+  const mit =
+    mitInput.value.trim();
+
+  if (!mit) return;
+
+  const length =
+    parseInt(lengthInput.value, 10);
+
+  currentSprint = {
+
+    mit: mit,
+
+    output: outputInput.value.trim(),
+
+    startDate: localDayString(Date.now()),
+
+    lengthDays:
+      (length === 3 || length === 4)
+        ? length
+        : 4,
+
+    touches: {}
+
+  };
+
+  finishingSprint = false;
+
+  save();
+
+  renderSprintCard();
+
+}
+
+
+function touchSprint() {
+
+  if (!currentSprint) return;
+
+  const today =
+    localDayString(Date.now());
+
+  currentSprint.touches =
+    currentSprint.touches || {};
+
+  currentSprint.touches[today] =
+    (currentSprint.touches[today] || 0) + 1;
+
+  save();
+
+  renderSprintCard();
+
+}
+
+
+function finishSprint() {
+
+  if (!currentSprint) return;
+
+  const resultInput =
+    document.getElementById(
+      "sprintResultInput"
+    );
+
+  const days =
+    sprintDayList(currentSprint);
+
+  const touches =
+    currentSprint.touches || {};
+
+  const total =
+    days.reduce(
+      (n, d) => n + (touches[d] || 0),
+      0
+    );
+
+  sprintHistory.unshift({
+
+    mit: currentSprint.mit,
+
+    output: currentSprint.output,
+
+    startDate: currentSprint.startDate,
+
+    endDate: localDayString(Date.now()),
+
+    touches: total,
+
+    result: resultInput.value.trim()
+
+  });
+
+  currentSprint = null;
+
+  finishingSprint = false;
+
+  save();
+
+  renderSprintCard();
 
 }
 

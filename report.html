@@ -195,6 +195,22 @@
       color: #1c1c1c;
     }
 
+    /* SPRINT HISTORY — collapsible card, display
+       only. It lives outside the COPY WEEK DATA
+       text on purpose: history is for reading,
+       never part of what gets copied. */
+    .sprint-history-item {
+      margin-bottom: 14px;
+    }
+
+    .sprint-history-mit {
+      font-weight: bold;
+    }
+
+    .sprint-history-meta {
+      color: #555;
+    }
+
     .footer {
       text-align: center;
       font-size: 11px;
@@ -257,14 +273,19 @@
       </button>
       <span id="copyMsg" class="copy-msg"></span>
     </div>
+
+    <section id="sprintHistorySection" class="deepweek-section" hidden>
+      <div class="deepweek-title" id="sprintHistoryToggle" style="cursor:pointer">SPRINT HISTORY</div>
+      <div id="sprintHistoryList" hidden></div>
+    </section>
   </main>
 
   <footer class="footer">
     ALL WORK AND NO PLAY MAKES ME A LLUD GIRL
   </footer>
 
-  <script src="film-bg.js?v=7"></script>
-  <script src="report.js?v=35"></script>
+  <script src="film-bg.js?v=8"></script>
+  <script src="report.js?v=36"></script>
   <script>if (typeof initFilmBg === 'function') initFilmBg();</script>
   <script>
 
@@ -480,6 +501,142 @@
           false;
 
       }
+
+
+      function loadSprintHistory() {
+
+        var raw = null;
+
+        try {
+
+          raw = JSON.parse(
+            localStorage.getItem(STORAGE_KEY)
+          );
+
+        } catch (e) {
+
+          raw = null;
+
+        }
+
+        if (
+          raw &&
+          Array.isArray(raw.sprintHistory)
+        ) {
+
+          return raw.sprintHistory;
+
+        }
+
+        return [];
+
+      }
+
+
+      function renderSprintHistory() {
+
+        var history =
+          loadSprintHistory();
+
+        if (!history.length) {
+
+          return;
+
+        }
+
+        var section =
+          document.getElementById(
+            "sprintHistorySection"
+          );
+
+        var title =
+          document.getElementById(
+            "sprintHistoryToggle"
+          );
+
+        title.textContent =
+          "SPRINT HISTORY (" +
+          history.length + ")";
+
+        var list =
+          document.getElementById(
+            "sprintHistoryList"
+          );
+
+        history.forEach(function (s) {
+
+          var item =
+            document.createElement("div");
+
+          item.className =
+            "sprint-history-item";
+
+          var mit =
+            document.createElement("div");
+
+          mit.className =
+            "sprint-history-mit";
+
+          mit.textContent = s.mit || "";
+
+          item.appendChild(mit);
+
+          if (s.output) {
+
+            var out =
+              document.createElement("div");
+
+            out.textContent =
+              "delivers: " + s.output;
+
+            item.appendChild(out);
+
+          }
+
+          if (s.result) {
+
+            var res =
+              document.createElement("div");
+
+            res.textContent =
+              "result: " + s.result;
+
+            item.appendChild(res);
+
+          }
+
+          var meta =
+            document.createElement("div");
+
+          meta.className =
+            "sprint-history-meta";
+
+          meta.textContent =
+            (s.startDate || "") + " → " +
+            (s.endDate || "") + " · " +
+            (s.touches || 0) + " touches";
+
+          item.appendChild(meta);
+
+          list.appendChild(item);
+
+        });
+
+        section.hidden = false;
+
+        title.addEventListener(
+          "click",
+          function () {
+
+            list.hidden = !list.hidden;
+
+          }
+        );
+
+      }
+
+
+      renderSprintHistory();
 
 
       var copyMsg =

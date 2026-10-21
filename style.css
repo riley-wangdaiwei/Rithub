@@ -1247,6 +1247,48 @@ textarea:focus {
 
 
 /* ==================================================
+   SPRINT (MIT) card — top of the projects column.
+   Retro-plain: whitespace separates, the MIT name
+   is bold, dots carry the state. No borders needed:
+   the override block below strips them anyway.
+================================================== */
+
+.sprint-card {
+
+  margin-bottom: 28px;
+
+}
+
+
+.sprint-mit {
+
+  font-weight: bold;
+
+}
+
+
+.sprint-meta {
+
+  color: #777;
+
+}
+
+
+.sprint-chain {
+
+  margin: 6px 0;
+
+}
+
+
+.sprint-chain-day {
+
+  margin-right: 14px;
+
+}
+
+
+/* ==================================================
    RETRO PLAIN MODE (2026-10-09, her call):
    no lines, just text, white background —
    like early webpages. One override block at the
