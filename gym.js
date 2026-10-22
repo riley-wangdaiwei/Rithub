@@ -253,16 +253,48 @@ function recordBests(log) {
   log.entries.forEach(function (e) {
     var cfg = ex(e.ex), mb = state.monthlyBests[m], w = entryWeight(e);
     if (w === null) return;
+    /* Reps at the best weight: the top set's reps.
+       Stored with the best so the full record
+       (weight + reps) survives log pruning. */
+    var reps = null;
+    entrySets(e).forEach(function (s) {
+      if (s.w === w && typeof s.r === 'number') {
+        if (reps === null || s.r > reps) reps = s.r;
+      }
+    });
     if (cfg.mode === 'assist') {
       if (!state.bests[e.ex] || w < state.bests[e.ex].weight)
-        state.bests[e.ex] = { weight:w, date:log.date };
+        state.bests[e.ex] = { weight:w, date:log.date, reps:reps };
       if (mb[e.ex] === undefined || w < mb[e.ex]) mb[e.ex] = w;
     } else {
       if (!state.bests[e.ex] || w > state.bests[e.ex].weight)
-        state.bests[e.ex] = { weight:w, date:log.date };
+        state.bests[e.ex] = { weight:w, date:log.date, reps:reps };
       if (mb[e.ex] === undefined || w > mb[e.ex]) mb[e.ex] = w;
     }
   });
+}
+
+/* Month-rollover auto-cleanup: when a save opens a new
+   month (its month is newer than every other log
+   month), drop the most recent pre-month log — one
+   only, not the whole old month. Bests are stored
+   separately, so the record survives. Returns the
+   dropped log's date, or null. */
+function monthRolloverCleanup(log) {
+  var m = log.date.slice(0,7);
+  var others = state.logs.filter(function (l) { return l !== log; });
+  var maxOther = '';
+  others.forEach(function (l) {
+    var lm = l.date.slice(0,7);
+    if (lm > maxOther) maxOther = lm;
+  });
+  if (!others.length || m <= maxOther) return null;
+  var older = others.filter(function (l) { return l.date.slice(0,7) < m; });
+  if (!older.length) return null;
+  older.sort(function (a,b) { return b.date.localeCompare(a.date); });
+  var drop = older[0];
+  state.logs = state.logs.filter(function (l) { return l !== drop; });
+  return drop.date;
 }
 
 document.getElementById('saveBtn').addEventListener('click', function () {
@@ -284,10 +316,13 @@ document.getElementById('saveBtn').addEventListener('click', function () {
   var log = { date:date, day:curDay, entries:entries };
   var idx = -1;
   state.logs.forEach(function (l, i) { if (l.date === date && l.day === curDay) idx = i; });
-  if (idx >= 0) { state.logs[idx] = log; flash('updated ' + date + ' ' + curDay); }
-  else { state.logs.push(log); flash('saved ' + date + ' ' + curDay + ' · ' + entries.length + ' lifts'); }
+  var wasUpdate = idx >= 0;
+  if (wasUpdate) { state.logs[idx] = log; }
+  else { state.logs.push(log); }
   recordBests(log);
+  var dropped = monthRolloverCleanup(log);
   save(); renderAll();
+  flash((wasUpdate ? 'updated ' : 'saved ') + date + ' ' + curDay + (wasUpdate ? '' : ' · ' + entries.length + ' lifts') + (dropped ? ' · dropped old log ' + dropped : ''));
 });
 
 document.getElementById('dayTabs').addEventListener('click', function (e) {
@@ -307,7 +342,7 @@ function renderProgress() {
   keyIds().forEach(function (id) {
     var cfg = ex(id), s = suggest(id), b = state.bests[id];
     out.push(cfg.name.toUpperCase());
-    out.push('  best    ' + (b ? b.weight + ' lb · ' + b.date.slice(5) : '--'));
+    out.push('  best    ' + (b ? b.weight + ' lb' + (typeof b.reps === 'number' ? ' x ' + b.reps : '') + ' · ' + b.date.slice(5) : '--'));
     out.push('  next    ' + (s.weight === null ? 'log once first'
       : s.weight + ' lb x ' + cfg.sets + '  (' + s.note + ')'));
     if (s.stuck > 1) out.push('  stuck   ' + entryWeight(s.last) + ' lb for ' + s.stuck + ' sessions');
