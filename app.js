@@ -3851,6 +3851,19 @@ document
         .value = "";
 
 
+      [
+        "commitStartInput",
+        "commitEndInput"
+      ].forEach(id => {
+
+        const el =
+          document.getElementById(id);
+
+        if (el) el.value = "";
+
+      });
+
+
       renderCommitNext(
         project
       );
@@ -4010,6 +4023,89 @@ document
   );
 
 
+/*
+   Read the manual FROM–TO time range from the
+   commit modal. Returns null unless both times
+   are filled and end is after start. The range
+   is always today — backfilling a past day
+   needs a date field, which this does not have.
+*/
+
+function readManualTimeRange() {
+
+  const startEl =
+    document.getElementById(
+      "commitStartInput"
+    );
+
+  const endEl =
+    document.getElementById(
+      "commitEndInput"
+    );
+
+
+  if (!startEl || !endEl) return null;
+
+  const startVal = startEl.value;
+
+  const endVal = endEl.value;
+
+
+  if (!startVal || !endVal) return null;
+
+
+  const toMin = v => {
+
+    const parts = v.split(":");
+
+    return (
+      parseInt(parts[0], 10) * 60 +
+      parseInt(parts[1], 10)
+    );
+
+  };
+
+
+  const startMin = toMin(startVal);
+
+  const endMin = toMin(endVal);
+
+
+  if (
+    isNaN(startMin) ||
+    isNaN(endMin) ||
+    endMin <= startMin
+  ) {
+
+    return null;
+
+  }
+
+
+  const now = new Date();
+
+  const endDate = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate(),
+    Math.floor(endMin / 60),
+    endMin % 60,
+    0,
+    0
+  );
+
+
+  return {
+
+    durationMin: endMin - startMin,
+
+    endIso: endDate.toISOString()
+
+  };
+
+}
+
+
 /* =====================================================
    SAVE COMMIT
 ===================================================== */
@@ -4040,7 +4136,41 @@ document
         input.value.trim();
 
 
-      if (!text) {
+      /*
+        Manual time range: when she forgot the timer,
+        she types the hours she actually worked
+        (FROM–TO, today). The report spreads a timed
+        commit over [createdAt - durationMin,
+        createdAt], so createdAt = end time and
+        durationMin = end - start puts the session
+        on its true hours — no report change needed.
+        Timer minutes win when present (measured
+        beats recalled), and the old rule stands:
+        a textless save still needs minutes.
+      */
+
+      const timerMin =
+        (
+          pendingDurationMin != null &&
+          pendingDurationMin > 0
+        )
+          ? pendingDurationMin
+          : null;
+
+
+      const manualRange =
+        timerMin == null
+          ? readManualTimeRange()
+          : null;
+
+
+      const manualMin =
+        manualRange
+          ? manualRange.durationMin
+          : null;
+
+
+      if (!text && manualMin == null) {
 
         return;
 
@@ -4063,7 +4193,9 @@ document
           generateCommitCode(),
 
         createdAt:
-          new Date().toISOString()
+          manualRange
+            ? manualRange.endIso
+            : new Date().toISOString()
 
       };
 
@@ -4073,13 +4205,15 @@ document
         Old commits without the field are untouched.
       */
 
-      if (
-        pendingDurationMin != null &&
-        pendingDurationMin > 0
-      ) {
+      if (timerMin != null) {
 
         commit.durationMin =
-          pendingDurationMin;
+          timerMin;
+
+      } else if (manualMin != null) {
+
+        commit.durationMin =
+          manualMin;
 
       }
 
