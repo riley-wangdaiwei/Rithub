@@ -1485,32 +1485,42 @@ function buildReport(projects, nowMs) {
 
   /* ---------- 4. project balance ---------- */
 
-  L.push("PROJECTS — commits/day");
+  L.push("PROJECTS — hours/week");
 
 
-  const head =
-    "             " +
-    days
-      .map(d => dayLabel(d).slice(3).padStart(3))
-      .join("");
+  /*
+    Weekly hours per project: measured minutes
+    only (durationMin). Text-only commits carry
+    no hours — in the last 7 days 38 of 40
+    commits were timed, so this is not a
+    meaningful undercount.
+  */
 
-
-  L.push(head);
-
-
-  const projCounts = {};
+  const projHours = {};
 
 
   names.forEach(n => {
 
-    projCounts[n] = days.map(d =>
-      commits.filter(
-        c =>
-          c.project === n &&
-          c.t >= d &&
-          c.t < d + 86400000
-      ).length
-    );
+    let mins = 0;
+
+
+    commits.forEach(c => {
+
+      if (
+        c.project === n &&
+        c.t >= days[0] &&
+        c.t < days[6] + 86400000 &&
+        c.durationMin
+      ) {
+
+        mins += c.durationMin;
+
+      }
+
+    });
+
+
+    projHours[n] = mins / 60;
 
   });
 
@@ -1518,30 +1528,19 @@ function buildReport(projects, nowMs) {
   const order =
     names
       .slice()
-      .sort((a, b) => {
-        const ta = projCounts[a].reduce((x, y) => x + y, 0);
-        const tb = projCounts[b].reduce((x, y) => x + y, 0);
-        return tb - ta;
-      });
+      .sort((a, b) => projHours[b] - projHours[a]);
 
 
   order.forEach(n => {
 
-    const row = projCounts[n];
-
-    const flag =
-      maxZeroRun(row) >= 3 ? " !" : "";
-
-
     L.push(
       n.slice(0, 13).padEnd(13) +
-      row.map(v => String(v).padStart(3)).join("") +
-      flag
+      (projHours[n].toFixed(1) + "h").padStart(6)
     );
 
   });
 
-  L.push(" ! = 3+ days with zero commits");
+  L.push("timed only — text-only commits carry no hours");
 
   L.push("");
 
